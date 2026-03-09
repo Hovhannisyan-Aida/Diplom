@@ -1,0 +1,48 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+p {
+  font-size: 1.3rem;
+  margin: 10px 0;
+  color: #f0f0f0;
+}
+
+.info-box {
+  margin-top: 40px;
+  padding: 30px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.info-box h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #ffd700;
+}
+
+.info-box p {
+  font-size: 1rem;
+  margin: 8px 0;
+  font-family: 'Courier New', monospace;
+}
