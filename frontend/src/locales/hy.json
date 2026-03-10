@@ -1,0 +1,112 @@
+{
+  "nav": {
+    "dashboard": "Վահանակ",
+    "scans": "Սկանավորումներ",
+    "newScan": "Նոր սկան",
+    "logout": "Դուրս գալ"
+  },
+  "dashboard": {
+    "title": "Վահանակ",
+    "welcome": "Բարի վերադարձ, {{name}}!",
+    "totalScans": "Ընդհանուր սկաններ",
+    "completed": "Ավարտված",
+    "vulnerabilities": "Խոցելիություններ",
+    "avgDuration": "Միջին տևողություն",
+    "vulnerabilitiesBySeverity": "Խոցելիություններ ըստ լրջության",
+    "recentScans": "Վերջին սկանավորումները",
+    "noData": "Խոցելիություններ չեն գտնվել",
+    "noScans": "Սկաններ դեռ չկան"
+  },
+  "newScan": {
+    "title": "Ստեղծել նոր սկան",
+    "subtitle": "Մուտքագրեք թիրախային URL-ը սկանավորելու համար",
+    "targetUrl": "Թիրախային URL",
+    "targetUrlPlaceholder": "https://example.com",
+    "targetUrlHelp": "Մուտքագրեք լրիվ URL-ը ներառյալ http:// կամ https://",
+    "scanType": "Սկանավորման տեսակ",
+    "quickScan": "Արագ սկան - Հիմնական անվտանգության ստուգումներ",
+    "fullScan": "Ամբողջական սկան - Համապարփակ վերլուծություն (խորհուրդ է տրվում)",
+    "customScan": "Հարմարեցված սկան - Ընդլայնված կարգավորումներ",
+    "whatWillBeScanned": "Ինչ կսկանավորվի?",
+    "sqlInjection": "SQL Injection խոցելիություններ",
+    "xss": "Cross-Site Scripting (XSS)",
+    "securityHeaders": "Անվտանգության headers-ների կարգավորում",
+    "commonVulnerabilities": "Ընդհանուր վեբ խոցելիություններ",
+    "cancel": "Չեղարկել",
+    "startScan": "Սկսել սկանավորումը",
+    "creating": "Սկան ստեղծվում է...",
+    "backToDashboard": "Վերադառնալ վահանակ"
+  },
+  "scans": {
+    "title": "Բոլոր սկանավորումները",
+    "subtitle": "Դիտեք և կառավարեք ձեր անվտանգության սկանավորումները",
+    "newScan": "Նոր սկան",
+    "targetUrl": "Թիրախային URL",
+    "type": "Տեսակ",
+    "status": "Կարգավիճակ",
+    "vulnerabilities": "Խոցելիություններ",
+    "duration": "Տևողություն",
+    "created": "Ստեղծված",
+    "actions": "Գործողություններ",
+    "noScans": "Սկաններ դեռ չկան",
+    "createFirst": "Ստեղծեք ձեր առաջին սկանը",
+    "loading": "Սկաններ բեռնվում են..."
+  },
+  "scanDetails": {
+    "title": "Սկանի արդյունքներ",
+    "exportJson": "Արտահանել JSON",
+    "status": "Կարգավիճակ",
+    "scanType": "Սկանի տեսակ",
+    "duration": "Տևողություն",
+    "created": "Ստեղծված",
+    "vulnerabilitiesSummary": "Խոցելիությունների ամփոփում",
+    "critical": "Կրիտիկական",
+    "high": "Բարձր",
+    "medium": "Միջին",
+    "low": "Ցածր",
+    "vulnerabilitiesList": "Խոցելիություններ",
+    "noVulnerabilities": "Խոցելիություններ չեն գտնվել",
+    "backToDashboard": "Վերադառնալ վահանակ",
+    "type": "Տեսակ",
+    "url": "URL",
+    "parameter": "Պարամետր",
+    "method": "Մեթոդ",
+    "recommendation": "Խորհուրդ",
+    "learnMore": "Իմանալ ավելին"
+  },
+  "logout": {
+    "title": "Հաստատել դուրս գալը",
+    "message": "Վստա՞հ եք, որ ուզում եք դուրս գալ:",
+    "cancel": "Չեղարկել",
+    "confirm": "Այո, դուրս գալ"
+  },
+  "login": {
+    "title": "Vulnerability Scanner",
+    "subtitle": "Մուտք գործեք ձեր հաշիվ",
+    "email": "Էլ․ փոստ",
+    "password": "Գաղտնաբառ",
+    "signIn": "Մուտք",
+    "signingIn": "Մուտք է գործվում...",
+    "noAccount": "Չունե՞ք հաշիվ:",
+    "signUp": "Գրանցվել"
+  },
+  "register": {
+    "title": "Ստեղծել հաշիվ",
+    "subtitle": "Գրանցվեք՝ սկսելու համար",
+    "fullName": "Անուն Ազգանուն",
+    "email": "Էլ․ փոստ",
+    "password": "Գաղտնաբառ",
+    "signUp": "Գրանցվել",
+    "creatingAccount": "Հաշիվ ստեղծվում է...",
+    "haveAccount": "Արդեն ունե՞ք հաշիվ:",
+    "signIn": "Մուտք գործել"
+  },
+  "toast": {
+    "scanCreated": "Սկանը հաջողությամբ ստեղծվեց!",
+    "scanFailed": "Սկան ստեղծելը ձախողվեց: Խնդրում ենք կրկին փորձել:",
+    "loginSuccess": "Մուտքը հաջողվեց!",
+    "loginFailed": "Մուտքը ձախողվեց: Ստուգեք ձեր տվյալները:",
+    "registerSuccess": "Գրանցումը հաջողվեց! Խնդրում ենք մուտք գործել:",
+    "registerFailed": "Գրանցումը ձախողվեց: Խնդրում ենք կրկին փորձել:"
+  }
+}

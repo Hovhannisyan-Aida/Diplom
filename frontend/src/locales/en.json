@@ -1,0 +1,112 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "scans": "Scans",
+    "newScan": "New Scan",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}!",
+    "totalScans": "Total Scans",
+    "completed": "Completed",
+    "vulnerabilities": "Vulnerabilities",
+    "avgDuration": "Avg Duration",
+    "vulnerabilitiesBySeverity": "Vulnerabilities by Severity",
+    "recentScans": "Recent Scans",
+    "noData": "No vulnerabilities found",
+    "noScans": "No scans yet"
+  },
+  "newScan": {
+    "title": "Create New Scan",
+    "subtitle": "Enter the target URL to scan for vulnerabilities",
+    "targetUrl": "Target URL",
+    "targetUrlPlaceholder": "https://example.com",
+    "targetUrlHelp": "Enter the full URL including http:// or https://",
+    "scanType": "Scan Type",
+    "quickScan": "Quick Scan - Basic security checks",
+    "fullScan": "Full Scan - Comprehensive analysis (recommended)",
+    "customScan": "Custom Scan - Advanced options",
+    "whatWillBeScanned": "What will be scanned?",
+    "sqlInjection": "SQL Injection vulnerabilities",
+    "xss": "Cross-Site Scripting (XSS)",
+    "securityHeaders": "Security Headers configuration",
+    "commonVulnerabilities": "Common web vulnerabilities",
+    "cancel": "Cancel",
+    "startScan": "Start Scan",
+    "creating": "Creating Scan...",
+    "backToDashboard": "Back to Dashboard"
+  },
+  "scans": {
+    "title": "All Scans",
+    "subtitle": "View and manage your security scans",
+    "newScan": "New Scan",
+    "targetUrl": "Target URL",
+    "type": "Type",
+    "status": "Status",
+    "vulnerabilities": "Vulnerabilities",
+    "duration": "Duration",
+    "created": "Created",
+    "actions": "Actions",
+    "noScans": "No scans yet",
+    "createFirst": "Create Your First Scan",
+    "loading": "Loading scans..."
+  },
+  "scanDetails": {
+    "title": "Scan Results",
+    "exportJson": "Export JSON",
+    "status": "Status",
+    "scanType": "Scan Type",
+    "duration": "Duration",
+    "created": "Created",
+    "vulnerabilitiesSummary": "Vulnerabilities Summary",
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "vulnerabilitiesList": "Vulnerabilities",
+    "noVulnerabilities": "No vulnerabilities found",
+    "backToDashboard": "Back to Dashboard",
+    "type": "Type",
+    "url": "URL",
+    "parameter": "Parameter",
+    "method": "Method",
+    "recommendation": "Recommendation",
+    "learnMore": "Learn more"
+  },
+  "logout": {
+    "title": "Confirm Logout",
+    "message": "Are you sure you want to logout?",
+    "cancel": "Cancel",
+    "confirm": "Yes, Logout"
+  },
+  "login": {
+    "title": "Vulnerability Scanner",
+    "subtitle": "Sign in to your account",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up"
+  },
+  "register": {
+    "title": "Create Account",
+    "subtitle": "Sign up to get started",
+    "fullName": "Full Name",
+    "email": "Email",
+    "password": "Password",
+    "signUp": "Sign Up",
+    "creatingAccount": "Creating account...",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "toast": {
+    "scanCreated": "Scan created successfully!",
+    "scanFailed": "Failed to create scan. Please try again.",
+    "loginSuccess": "Login successful!",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "registerSuccess": "Registration successful! Please login.",
+    "registerFailed": "Registration failed. Please try again."
+  }
+}

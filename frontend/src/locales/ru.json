@@ -1,0 +1,112 @@
+{
+  "nav": {
+    "dashboard": "Панель",
+    "scans": "Сканирования",
+    "newScan": "Новое сканирование",
+    "logout": "Выйти"
+  },
+  "dashboard": {
+    "title": "Панель управления",
+    "welcome": "Добро пожаловать, {{name}}!",
+    "totalScans": "Всего сканирований",
+    "completed": "Завершено",
+    "vulnerabilities": "Уязвимости",
+    "avgDuration": "Средняя продолжительность",
+    "vulnerabilitiesBySeverity": "Уязвимости по серьезности",
+    "recentScans": "Последние сканирования",
+    "noData": "Уязвимости не найдены",
+    "noScans": "Сканирований пока нет"
+  },
+  "newScan": {
+    "title": "Создать новое сканирование",
+    "subtitle": "Введите целевой URL для сканирования уязвимостей",
+    "targetUrl": "Целевой URL",
+    "targetUrlPlaceholder": "https://example.com",
+    "targetUrlHelp": "Введите полный URL, включая http:// или https://",
+    "scanType": "Тип сканирования",
+    "quickScan": "Быстрое сканирование - Базовые проверки безопасности",
+    "fullScan": "Полное сканирование - Комплексный анализ (рекомендуется)",
+    "customScan": "Настраиваемое сканирование - Расширенные опции",
+    "whatWillBeScanned": "Что будет сканироваться?",
+    "sqlInjection": "SQL-инъекции",
+    "xss": "Межсайтовый скриптинг (XSS)",
+    "securityHeaders": "Конфигурация заголовков безопасности",
+    "commonVulnerabilities": "Общие веб-уязвимости",
+    "cancel": "Отмена",
+    "startScan": "Начать сканирование",
+    "creating": "Создание сканирования...",
+    "backToDashboard": "Вернуться к панели"
+  },
+  "scans": {
+    "title": "Все сканирования",
+    "subtitle": "Просмотр и управление сканированиями безопасности",
+    "newScan": "Новое сканирование",
+    "targetUrl": "Целевой URL",
+    "type": "Тип",
+    "status": "Статус",
+    "vulnerabilities": "Уязвимости",
+    "duration": "Продолжительность",
+    "created": "Создано",
+    "actions": "Действия",
+    "noScans": "Сканирований пока нет",
+    "createFirst": "Создайте первое сканирование",
+    "loading": "Загрузка сканирований..."
+  },
+  "scanDetails": {
+    "title": "Результаты сканирования",
+    "exportJson": "Экспорт JSON",
+    "status": "Статус",
+    "scanType": "Тип сканирования",
+    "duration": "Продолжительность",
+    "created": "Создано",
+    "vulnerabilitiesSummary": "Сводка уязвимостей",
+    "critical": "Критические",
+    "high": "Высокие",
+    "medium": "Средние",
+    "low": "Низкие",
+    "vulnerabilitiesList": "Уязвимости",
+    "noVulnerabilities": "Уязвимости не найдены",
+    "backToDashboard": "Вернуться к панели",
+    "type": "Тип",
+    "url": "URL",
+    "parameter": "Параметр",
+    "method": "Метод",
+    "recommendation": "Рекомендация",
+    "learnMore": "Узнать больше"
+  },
+  "logout": {
+    "title": "Подтвердить выход",
+    "message": "Вы уверены, что хотите выйти?",
+    "cancel": "Отмена",
+    "confirm": "Да, выйти"
+  },
+  "login": {
+    "title": "Vulnerability Scanner",
+    "subtitle": "Войдите в свой аккаунт",
+    "email": "Email",
+    "password": "Пароль",
+    "signIn": "Войти",
+    "signingIn": "Вход...",
+    "noAccount": "Нет аккаунта?",
+    "signUp": "Зарегистрироваться"
+  },
+  "register": {
+    "title": "Создать аккаунт",
+    "subtitle": "Зарегистрируйтесь, чтобы начать",
+    "fullName": "Полное имя",
+    "email": "Email",
+    "password": "Пароль",
+    "signUp": "Зарегистрироваться",
+    "creatingAccount": "Создание аккаунта...",
+    "haveAccount": "Уже есть аккаунт?",
+    "signIn": "Войти"
+  },
+  "toast": {
+    "scanCreated": "Сканирование успешно создано!",
+    "scanFailed": "Не удалось создать сканирование. Попробуйте снова.",
+    "loginSuccess": "Вход выполнен успешно!",
+    "loginFailed": "Ошибка входа. Проверьте свои данные.",
+    "registerSuccess": "Регистрация успешна! Пожалуйста, войдите.",
+    "registerFailed": "Ошибка регистрации. Попробуйте снова."
+  }
+}

@@ -1,28 +1,102 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import NewScan from './pages/NewScan';
+import ScanDetails from './pages/ScanDetails';
+import Scans from './pages/Scans';
 import './App.css';
 
+// Protected Route Component
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>Loading...</div>;
+  }
+
+  return isAuthenticated ? children : <Navigate to="/login" />;
+}
+
+// Public Route Component (redirect to dashboard if already logged in)
+function PublicRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>Loading...</div>;
+  }
+
+  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
+}
+
 function App() {
-  const [status, setStatus] = React.useState('Loading...');
-
-  React.useEffect(() => {
-    fetch('http://localhost/api/v1/auth/me')
-      .then(res => res.json())
-      .then(data => setStatus('Backend Connected ✅'))
-      .catch(() => setStatus('Backend API Running ✅'));
-  }, []);
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>🛡️ Vulnerability Scanner</h1>
-        <p>{status}</p>
-        <div className="info-box">
-          <h3>Authentication System Ready</h3>
-          <p>Backend API: http://localhost:8000</p>
-          <p>Swagger Docs: http://localhost:8000/docs</p>
-        </div>
-      </header>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <ToastProvider>
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" />} />
+            
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            
+            <Route
+              path="/register"
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              }
+            />
+            
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/scans"
+              element={
+                <ProtectedRoute>
+                  <Scans />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/new-scan"
+              element={
+                <ProtectedRoute>
+                  <NewScan />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/scans/:id"
+              element={
+                <ProtectedRoute>
+                  <ScanDetails />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </ToastProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
