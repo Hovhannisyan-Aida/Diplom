@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from app.models.scan import ScanStatus
+from app.schemas.vulnerability import VulnerabilityInDB
 
 class ScanBase(BaseModel):
     target_url: str
@@ -24,6 +25,7 @@ class ScanInDB(ScanBase):
     low_count: int
     scan_duration: Optional[int] = None
     error_message: Optional[str] = None
+    vulnerabilities: List[VulnerabilityInDB] = []
     
     class Config:
         from_attributes = True

@@ -49,6 +49,7 @@ def get_scan(scan_id: int,
     
     if scan.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    _ = scan.vulnerabilities
     
     return scan
 
