@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { Shield } from 'lucide-react';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import './Login.css';
 
 function Register() {
+  const { t } = useTranslation();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -20,11 +22,11 @@ function Register() {
     setLoading(true);
 
     try {
-      await register(email, password, fullName);
-      alert('Registration successful! Please login.');
+      await register(fullName, email, password);
+      alert(t('toast.registerSuccess'));
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+      setError(err.response?.data?.detail || t('toast.registerFailed'));
     } finally {
       setLoading(false);
     }
@@ -32,16 +34,13 @@ function Register() {
 
   return (
     <div className="login-container">
-      <div className="login-container">
-        <LanguageSwitcher />  
-        <div className="login-box">
-        </div>
-      </div>
       <div className="login-box">
+        <LanguageSwitcher />
+        
         <div className="login-header">
           <Shield size={48} className="logo-icon" />
-          <h1>Create Account</h1>
-          <p>Sign up to get started</p>
+          <h1>{t('register.title')}</h1>
+          <p>{t('register.subtitle')}</p>
         </div>
 
         {error && (
@@ -52,7 +51,7 @@ function Register() {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="fullName">Full Name</label>
+            <label htmlFor="fullName">{t('register.fullName')}</label>
             <input
               id="fullName"
               type="text"
@@ -64,7 +63,7 @@ function Register() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t('register.email')}</label>
             <input
               id="email"
               type="email"
@@ -76,7 +75,7 @@ function Register() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t('register.password')}</label>
             <input
               id="password"
               type="password"
@@ -84,18 +83,17 @@ function Register() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              minLength="6"
             />
           </div>
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Creating account...' : 'Sign Up'}
+            {loading ? t('register.creatingAccount') : t('register.signUp')}
           </button>
         </form>
 
         <div className="login-footer">
           <p>
-            Already have an account? <Link to="/login">Sign in</Link>
+            {t('register.haveAccount')} <Link to="/login">{t('register.signIn')}</Link>
           </p>
         </div>
       </div>

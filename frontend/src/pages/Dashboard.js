@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { scansAPI } from '../services/api';
 import { Shield, Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -8,6 +9,7 @@ import LogoutModal from '../components/LogoutModal';
 import './Dashboard.css';
 
 function Dashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -66,16 +68,16 @@ function Dashboard() {
         </div>
         <div className="navbar-menu">
           <button onClick={() => navigate('/dashboard')} className="nav-link active">
-            Dashboard
+            {t('nav.dashboard')}
           </button>
           <button onClick={() => navigate('/scans')} className="nav-link">
-            Scans
+            {t('nav.scans')}
           </button>
           <button onClick={() => navigate('/new-scan')} className="nav-link">
-            New Scan
+            {t('nav.newScan')}
           </button>
           <button onClick={() => setShowLogoutModal(true)} className="btn-logout">
-            Logout
+            {t('nav.logout')}
           </button>
         </div>
       </nav>
@@ -88,8 +90,8 @@ function Dashboard() {
 
       <div className="dashboard-content">
         <div className="dashboard-header">
-          <h1>Dashboard</h1>
-          <p>Welcome back, {user?.full_name}!</p>
+          <h1>{t('dashboard.title')}</h1>
+          <p>{t('dashboard.welcome', { name: user?.full_name })}</p>
         </div>
 
         <div className="stats-grid">
@@ -98,7 +100,7 @@ function Dashboard() {
               <Activity size={24} style={{ color: '#2563eb' }} />
             </div>
             <div className="stat-info">
-              <p className="stat-label">Total Scans</p>
+              <p className="stat-label">{t('dashboard.totalScans')}</p>
               <p className="stat-value">{stats?.total_scans || 0}</p>
             </div>
           </div>
@@ -108,7 +110,7 @@ function Dashboard() {
               <CheckCircle size={24} style={{ color: '#16a34a' }} />
             </div>
             <div className="stat-info">
-              <p className="stat-label">Completed</p>
+              <p className="stat-label">{t('dashboard.completed')}</p>
               <p className="stat-value">{stats?.completed_scans || 0}</p>
             </div>
           </div>
@@ -118,7 +120,7 @@ function Dashboard() {
               <AlertCircle size={24} style={{ color: '#d97706' }} />
             </div>
             <div className="stat-info">
-              <p className="stat-label">Vulnerabilities</p>
+              <p className="stat-label">{t('dashboard.vulnerabilities')}</p>
               <p className="stat-value">{stats?.total_vulnerabilities || 0}</p>
             </div>
           </div>
@@ -128,7 +130,7 @@ function Dashboard() {
               <Clock size={24} style={{ color: '#6366f1' }} />
             </div>
             <div className="stat-info">
-              <p className="stat-label">Avg Duration</p>
+              <p className="stat-label">{t('dashboard.avgDuration')}</p>
               <p className="stat-value">{stats?.average_scan_duration?.toFixed(1) || 0}s</p>
             </div>
           </div>
@@ -136,7 +138,7 @@ function Dashboard() {
 
         <div className="dashboard-row">
           <div className="chart-card">
-            <h2>Vulnerabilities by Severity</h2>
+            <h2>{t('dashboard.vulnerabilitiesBySeverity')}</h2>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -196,12 +198,12 @@ function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="no-data">No vulnerabilities found</p>
+              <p className="no-data">{t('dashboard.noData')}</p>
             )}
           </div>
 
           <div className="recent-scans-card">
-            <h2>Recent Scans</h2>
+            <h2>{t('dashboard.recentScans')}</h2>
             {stats?.recent_scans?.length > 0 ? (
               <div className="scans-list">
                 {stats.recent_scans.map((scan) => (
@@ -217,7 +219,7 @@ function Dashboard() {
                 ))}
               </div>
             ) : (
-              <p className="no-data">No scans yet</p>
+              <p className="no-data">{t('dashboard.noScans')}</p>
             )}
           </div>
         </div>

@@ -55,8 +55,8 @@
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3),
               0 0 0 1px rgba(255, 255, 255, 0.2);
   width: 100%;
-  max-width: 440px;
-  padding: 50px;
+  max-width: 900px;  
+  padding: 50px 80px;  
   position: relative;
   z-index: 1;
   animation: slideUp 0.6s ease-out;
@@ -127,9 +127,10 @@
 }
 
 .login-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* ← 2 columns */
   gap: 24px;
+  margin-top: 40px;
 }
 
 .form-group {
@@ -137,6 +138,11 @@
   flex-direction: column;
   gap: 10px;
   position: relative;
+}
+
+.login-form .btn-primary {
+  grid-column: 1 / -1;  
+  margin-top: 16px;
 }
 
 .form-group label {
@@ -243,7 +249,6 @@
   width: 100%;
 }
 
-/* Language Switcher - Inside login box */
 .login-box .language-switcher {
   position: absolute;
   top: 20px;
@@ -256,9 +261,14 @@
   left: auto;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .login-box {
     padding: 40px 30px;
+    max-width: 440px;  
+  }
+
+  .login-form {
+    grid-template-columns: 1fr; 
   }
   
   .login-header h1 {

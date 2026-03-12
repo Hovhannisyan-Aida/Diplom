@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { scansAPI } from '../services/api';
-import { Shield, Plus, Eye } from 'lucide-react';
+import { Shield, Plus } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
 import './Scans.css';
 
 function Scans() {
+  const { t } = useTranslation();
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { logout } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,9 +30,13 @@ function Scans() {
     }
   };
 
-  const getStatusClass = (status) => {
-    return `status-badge status-${status}`;
-  };
+  if (loading) {
+    return (
+      <div className="scans-page">
+        <div className="loading">{t('scans.loading')}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="scans-page">
@@ -41,25 +47,26 @@ function Scans() {
         </div>
         <div className="navbar-menu">
           <button onClick={() => navigate('/dashboard')} className="nav-link">
-            Dashboard
+            {t('nav.dashboard')}
           </button>
           <button onClick={() => navigate('/scans')} className="nav-link active">
-            Scans
+            {t('nav.scans')}
           </button>
           <button onClick={() => navigate('/new-scan')} className="nav-link">
-            New Scan
+            {t('nav.newScan')}
           </button>
           <button onClick={() => setShowLogoutModal(true)} className="btn-logout">
-            Logout
+            {t('nav.logout')}
           </button>
         </div>
       </nav>
+
       <LogoutModal 
         isOpen={showLogoutModal}
         onConfirm={() => {
-            setShowLogoutModal(false);
-            logout();
-            navigate('/login');
+          setShowLogoutModal(false);
+          logout();
+          navigate('/login');
         }}
         onCancel={() => setShowLogoutModal(false)}
       />
@@ -67,84 +74,90 @@ function Scans() {
       <div className="scans-content">
         <div className="scans-header">
           <div>
-            <h1>All Scans</h1>
-            <p>View and manage your security scans</p>
+            <h1>{t('scans.title')}</h1>
+            <p>{t('scans.subtitle')}</p>
           </div>
           <button onClick={() => navigate('/new-scan')} className="btn-new-scan">
             <Plus size={20} />
-            New Scan
+            {t('scans.newScan')}
           </button>
         </div>
 
-        {loading ? (
-          <div className="loading">Loading scans...</div>
-        ) : scans.length > 0 ? (
+        {scans.length === 0 ? (
+          <div className="no-scans">
+            <p>{t('scans.noScans')}</p>
+            <button onClick={() => navigate('/new-scan')} className="btn-primary">
+              {t('scans.createFirst')}
+            </button>
+          </div>
+        ) : (
           <div className="scans-table-container">
             <table className="scans-table">
               <thead>
                 <tr>
-                  <th>Target URL</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Vulnerabilities</th>
-                  <th>Duration</th>
-                  <th>Created</th>
-                  <th>Actions</th>
+                  <th>{t('scans.targetUrl')}</th>
+                  <th>{t('scans.type')}</th>
+                  <th>{t('scans.status')}</th>
+                  <th>{t('scans.vulnerabilities')}</th>
+                  <th>{t('scans.duration')}</th>
+                  <th>{t('scans.created')}</th>
+                  <th>{t('scans.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {scans.map((scan) => (
                   <tr key={scan.id}>
-                    <td className="url-cell">{scan.target_url}</td>
-                    <td>
-                      <span className="type-badge">{scan.scan_type}</span>
+                    <td style={{backgroundColor: '#ffcccc'}}>{scan.target_url || 'EMPTY'}</td>
+                    <td style={{backgroundColor: '#ccffcc'}}>
+                      <span className="type-badge">{scan.scan_type || 'EMPTY'}</span>
                     </td>
-                    <td>
-                      <span className={getStatusClass(scan.status)}>
-                        {scan.status}
+                    <td style={{backgroundColor: '#ccccff'}}>
+                      <span className={`status-badge status-${scan.status}`}>
+                        {scan.status || 'EMPTY'}
                       </span>
                     </td>
                     <td>
-                      <div className="vuln-summary">
-                        {scan.critical_count > 0 && (
-                          <span className="vuln-count critical">{scan.critical_count}C</span>
-                        )}
-                        {scan.high_count > 0 && (
-                          <span className="vuln-count high">{scan.high_count}H</span>
-                        )}
-                        {scan.medium_count > 0 && (
-                          <span className="vuln-count medium">{scan.medium_count}M</span>
-                        )}
-                        {scan.low_count > 0 && (
-                          <span className="vuln-count low">{scan.low_count}L</span>
-                        )}
-                        {scan.total_vulnerabilities === 0 && (
-                          <span className="no-vulns">None</span>
-                        )}
-                      </div>
+                      {scan.total_vulnerabilities > 0 ? (
+                        <div className="vuln-summary">
+                          {scan.critical_count > 0 && (
+                            <span className="vuln-count critical">
+                              C: {scan.critical_count}
+                            </span>
+                          )}
+                          {scan.high_count > 0 && (
+                            <span className="vuln-count high">
+                              H: {scan.high_count}
+                            </span>
+                          )}
+                          {scan.medium_count > 0 && (
+                            <span className="vuln-count medium">
+                              M: {scan.medium_count}
+                            </span>
+                          )}
+                          {scan.low_count > 0 && (
+                            <span className="vuln-count low">
+                              L: {scan.low_count}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="no-vulns">-</span>
+                      )}
                     </td>
-                    <td>{scan.scan_duration || 0}s</td>
+                    <td>{scan.scan_duration ? `${scan.scan_duration}s` : '-'}</td>
                     <td>{new Date(scan.created_at).toLocaleDateString()}</td>
                     <td>
                       <button
                         onClick={() => navigate(`/scans/${scan.id}`)}
                         className="btn-view"
-                        title="View Details"
                       >
-                        <Eye size={18} />
+                        {t('scans.view')}
                       </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        ) : (
-          <div className="no-scans">
-            <p>No scans yet</p>
-            <button onClick={() => navigate('/new-scan')} className="btn-primary">
-              Create Your First Scan
-            </button>
           </div>
         )}
       </div>
