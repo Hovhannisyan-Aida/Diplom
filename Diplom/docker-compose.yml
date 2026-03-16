@@ -9,13 +9,16 @@ services:
       POSTGRES_USER: scanner_user
       POSTGRES_PASSWORD: scanner_pass_2024
       POSTGRES_DB: scanner_db
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - scanner-network
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scanner_user -d scanner_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      
   # Redis
   redis:
     image: redis:7-alpine
@@ -40,8 +43,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - ./backend:/app
     networks:

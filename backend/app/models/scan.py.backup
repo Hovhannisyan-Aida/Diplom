@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Column, Integer, String, DateTime, ForeignKey, Enum as SQLEnum, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum as SQLEnum, Text
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 import enum
@@ -36,7 +36,6 @@ class Scan(Base):
     
     scan_duration = Column(Integer, nullable=True)  # ← Վայրկյաններով
     error_message = Column(Text, nullable=True)
-    custom_options = Column(JSON, nullable=True)  # Custom scan options
     
     # Relationships
     user = relationship("User", back_populates="scans")

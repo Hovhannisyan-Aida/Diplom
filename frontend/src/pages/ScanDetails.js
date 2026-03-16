@@ -7,6 +7,24 @@ import { Shield, Download, ArrowLeft } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
 import './ScanDetails.css';
 
+// Helper function - ԴՈՒՐՍՈՒՄ component-ից
+const formatDateTime = (dateString) => {
+  if (!dateString) return '-';
+  
+  const date = new Date(dateString);
+  
+  // Automatically use user's local timezone
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+};
+
 function ScanDetails() {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -134,7 +152,7 @@ function ScanDetails() {
           <div className="info-card">
             <div className="info-label">{t('scanDetails.created')}</div>
             <div className="info-value">
-              {new Date(scan.created_at).toLocaleString()}
+              {formatDateTime(scan.created_at)}
             </div>
           </div>
         </div>
@@ -173,7 +191,7 @@ function ScanDetails() {
               {scan.vulnerabilities.map((vuln, index) => (
                 <div key={index} className={`vulnerability-card severity-${vuln.severity}`}>
                   <div className="vuln-header">
-                    <h3>{vuln.type}</h3>
+                    <h3>{vuln.title}</h3>
                     <span className={`severity-badge ${vuln.severity}`}>
                       {vuln.severity}
                     </span>
@@ -198,9 +216,9 @@ function ScanDetails() {
                         <strong>{t('scanDetails.recommendation')}:</strong> {vuln.recommendation}
                       </div>
                     )}
-                    {vuln.reference && (
+                    {vuln.references && (
                       <div className="vuln-reference">
-                        <a href={vuln.reference} target="_blank" rel="noopener noreferrer">
+                        <a href={vuln.references} target="_blank" rel="noopener noreferrer">
                           {t('scanDetails.learnMore')} →
                         </a>
                       </div>

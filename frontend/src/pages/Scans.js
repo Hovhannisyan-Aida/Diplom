@@ -7,6 +7,22 @@ import { Shield, Plus } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
 import './Scans.css';
 
+// Helper function - ԴՈՒՐՍՈՒՄ component-ից
+const formatDateTime = (dateString) => {
+  if (!dateString) return '-';
+  
+  const date = new Date(dateString);
+  
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+};
+
 function Scans() {
   const { t } = useTranslation();
   const [scans, setScans] = useState([]);
@@ -155,7 +171,9 @@ function Scans() {
                         )}
                       </td>
                       <td>{scan.scan_duration ? `${scan.scan_duration}s` : '-'}</td>
-                      <td>{new Date(scan.created_at).toLocaleDateString()}</td>
+                      <td className="scans-created-cell">
+                        {formatDateTime(scan.created_at)}
+                      </td>
                       <td>
                         <button
                           onClick={() => navigate(`/scans/${scan.id}`)}

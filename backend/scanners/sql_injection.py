@@ -1,126 +1,182 @@
 from typing import List, Dict, Any
 from scanners.base_scanner import BaseScanner
-from scanners.crawler import WebCrawler
-from urllib.parse import urlparse, parse_qs, urlencode
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse, urlencode, parse_qs, urlunparse
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
 class SQLInjectionScanner(BaseScanner):
-    """SQL Injection ստուգող"""
     
     PAYLOADS = [
+        "'",
+        "''",
         "' OR '1'='1",
-        "1' OR '1'='1",
-        "admin'--",
         "' OR 1=1--",
+        "admin'--",
+        "' OR SLEEP(3)--",
+        "'; WAITFOR DELAY '0:0:3'--",
+        "1' ORDER BY 1--",
+        "1' ORDER BY 2--",
+        "' AND 1=2--",
     ]
     
     ERROR_SIGNATURES = [
         "sql syntax",
-        "mysql",
+        "mysql_fetch",
+        "mysql error",
         "postgresql",
         "ora-01",
         "sqlite",
         "syntax error",
         "unclosed quotation",
+        "you have an error in your sql",
+        "warning: mysql",
+        "invalid query",
+        "pg_query",
     ]
     
     def scan(self) -> List[Dict[str, Any]]:
-        """Սկանավորել SQL injection"""
-        logger.info(f"Starting SQL Injection scan for {self.target_url}")
+        print(f"Starting SQL Injection scan for {self.target_url}", flush=True)
         
-        # First, crawl to find URLs with parameters
-        crawler = WebCrawler(self.target_url, max_pages=15)
-        urls_with_params = crawler.crawl()
+        baseline_start = time.time()
+        self.make_request(self.target_url)
+        self.baseline_time = time.time() - baseline_start
+        self.threshold = self.baseline_time + 2.5
+        print(f"Baseline: {round(self.baseline_time, 2)}s, Threshold: {round(self.threshold, 2)}s", flush=True)
         
-        if urls_with_params:
-            logger.info(f"Found {len(urls_with_params)} URLs with parameters to test")
-            for url in urls_with_params:
-                self._test_url_params(url)
-        else:
-            # Fallback to testing common parameters on base URL
-            logger.info("No URLs with parameters found, testing common parameters")
-            self._test_parameters()
-        
-        # DEMO MODE - Add sample vulnerability for demonstration
-        # This shows the system's capability to detect and report SQL injection
-        if len(self.vulnerabilities) == 0:
-            logger.info("Adding demo SQL Injection vulnerability for demonstration")
-            self.add_vulnerability({
-                "vuln_type": "sql_injection",
-                "severity": "critical",
-                "title": "SQL Injection խոցելիություն id պարամետրում",
-                "description": "Հայտնաբերված SQL injection խոցելիություն 'id' GET պարամետրում։ Հարձակվողը կարող է ընթերցել կամ փոփոխել database-ի տվյալները։ Օրինակ՝ payload-ը \"1' OR '1'='1\" թույլ է տալիս bypass անել authentication-ը կամ ստանալ unauthorized data։",
-                "url": f"{self.target_url}?id=1' OR '1'='1",
-                "parameter": "id",
-                "method": "GET",
-                "payload": "1' OR '1'='1",
-                "evidence": "SQL սխալի հաղորդագրություն response-ում՝ 'You have an error in your SQL syntax near \\'1\\' OR \\'1\\'=\\'1\\''",
-                "recommendation": "Օգտագործեք parameterized queries (prepared statements) փոխարեն string concatenation-ի։ Օրինակ՝ PDO::prepare() PHP-ում կամ SqlCommand.Parameters C#-ում։ Երբեք մի concatenate անեք user input-ը SQL query-ի մեջ։",
-                "references": "https://owasp.org/www-community/attacks/SQL_Injection"
-            })
-        
+        self._test_url_parameters()
+        self._test_forms()
+        print(f"SQL scan finished, found {len(self.results)} vulnerabilities", flush=True)
         return self.get_results()
-
-    def _test_url_params(self, url: str):
-        """Test actual URL parameters found during crawling"""
-        parsed = urlparse(url)
+    
+    def _test_url_parameters(self):
+        parsed = urlparse(self.target_url)
         params = parse_qs(parsed.query)
         
-        for param_name in params.keys():
-            for payload in self.PAYLOADS:
-                # Create test URL with payload
-                test_params = params.copy()
-                test_params[param_name] = [payload]
-                
-                test_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{urlencode(test_params, doseq=True)}"
-                response = self.make_request(test_url)
-                
-                if response and self._detect_sql_error(response.text):
-                    logger.info(f"FOUND SQL Injection in parameter: {param_name}")
-                    self.add_vulnerability({
-                        "vuln_type": "sql_injection",
-                        "severity": "critical",
-                        "title": f"SQL Injection խոցելիություն {param_name} պարամետրում",
-                        "description": f"Հայտնաբերված SQL injection խոցելիություն '{param_name}' պարամետրում։ Հարձակվողը կարող է ընթերցել կամ փոփոխել database-ի տվյալները։",
-                        "url": test_url,
-                        "parameter": param_name,
-                        "method": "GET",
-                        "payload": payload,
-                        "evidence": "SQL սխալի հաղորդագրություն response-ում",
-                        "recommendation": "Օգտագործեք parameterized queries (prepared statements) փոխարեն string concatenation-ի։",
-                        "references": "https://owasp.org/www-community/attacks/SQL_Injection"
-                    })
-                    break  # Found vulnerability, move to next parameter
+        if params:
+            for param in params:
+                for payload in self.PAYLOADS:
+                    new_params = params.copy()
+                    new_params[param] = [payload]
+                    new_query = urlencode(new_params, doseq=True)
+                    test_url = urlunparse(parsed._replace(query=new_query))
+                    
+                    start_time = time.time()
+                    response = self.make_request(test_url)
+                    elapsed = time.time() - start_time
+                    
+                    if response and (self._detect_sql_error(response.text) or elapsed > self.threshold):
+                        print(f"SQL INJECTION FOUND in param {param}! elapsed={elapsed}", flush=True)
+                        self.add_vulnerability({
+                            "vuln_type": "sql_injection",
+                            "severity": "critical",
+                            "title": f"SQL Injection խոցելիություն {param} պարամետրում",
+                            "description": f"SQL injection հայտնաբերված '{param}' պարամետրում։ {'Time-based - response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error հայտնաբերված'}",
+                            "url": test_url,
+                            "parameter": param,
+                            "method": "GET",
+                            "payload": payload,
+                            "evidence": f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature հայտնաբերված response-ում'}",
+                            "recommendation": "Օգտագործեք parameterized queries կամ prepared statements։",
+                            "references": "https://owasp.org/www-community/attacks/SQL_Injection"
+                        })
+                        return
+        else:
+            common_params = ["id", "page", "user", "search", "q", "cat", "item"]
+            for param in common_params:
+                for payload in self.PAYLOADS:
+                    test_url = f"{self.target_url}?{param}={payload}"
+                    start_time = time.time()
+                    response = self.make_request(test_url)
+                    elapsed = time.time() - start_time
+                    
+                    if response and (self._detect_sql_error(response.text) or elapsed > self.threshold):
+                        print(f"SQL INJECTION FOUND in param {param}! elapsed={elapsed}", flush=True)
+                        self.add_vulnerability({
+                            "vuln_type": "sql_injection",
+                            "severity": "critical",
+                            "title": f"SQL Injection խոցելիություն {param} պարամետրում",
+                            "description": f"SQL injection հայտնաբերված '{param}' պարամետրում։ {'Time-based - response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error հայտնաբերված'}",
+                            "url": test_url,
+                            "parameter": param,
+                            "method": "GET",
+                            "payload": payload,
+                            "evidence": f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature հայտնաբերված response-ում'}",
+                            "recommendation": "Օգտագործեք parameterized queries կամ prepared statements։",
+                            "references": "https://owasp.org/www-community/attacks/SQL_Injection"
+                        })
+                        return
     
-    def _test_parameters(self):
-        """Թեստավորել GET պարամետրերը"""
-        common_params = ["id", "page", "user", "search"]
+    def _test_forms(self):
+        response = self.make_request(self.target_url)
+        if not response:
+            print(f"No response from {self.target_url}", flush=True)
+            return
         
-        for param in common_params:
-            for payload in self.PAYLOADS:
-                test_url = f"{self.target_url}?{param}={payload}"
-                response = self.make_request(test_url)
-                
-                if response and self._detect_sql_error(response.text):
-                    self.add_vulnerability({
-                        "vuln_type": "sql_injection",
-                        "severity": "critical",
-                        "title": f"SQL Injection հնարավորություն {param} պարամետրում",
-                        "description": f"Հնարավոր SQL injection խոցելիություն '{param}' պարամետրում",
-                        "url": test_url,
-                        "parameter": param,
-                        "method": "GET",
-                        "payload": payload,
-                        "evidence": "SQL սխալի հաղորդագրություն response-ում",
-                        "recommendation": "Օգտագործեք parameterized queries կամ prepared statements։",
-                        "references": "https://owasp.org/www-community/attacks/SQL_Injection"
-                    })
-                    break
+        soup = BeautifulSoup(response.text, 'html.parser')
+        forms = soup.find_all('form')
+        print(f"Found {len(forms)} forms on {self.target_url}", flush=True)
+        
+        for form in forms:
+            action = form.get('action', '')
+            method = form.get('method', 'get').lower()
+            form_url = urljoin(self.target_url, action) if action else self.target_url
+            
+            inputs = form.find_all(['input', 'textarea'])
+            form_data = {}
+            for inp in inputs:
+                name = inp.get('name')
+                if name:
+                    form_data[name] = inp.get('value', 'test')
+            
+            print(f"Form: {form_url}, method: {method}, fields: {list(form_data.keys())}", flush=True)
+            
+            if not form_data:
+                continue
+            
+            # Get normal response length for comparison
+            if method == 'post':
+                normal_resp = self.make_request(form_url, method='POST', data=form_data)
+            else:
+                normal_resp = self.make_request(form_url, method='GET', params=form_data)
+            normal_length = len(normal_resp.text) if normal_resp else 0
+            print(f"Normal response length: {normal_length}", flush=True)
+            
+            for field in form_data:
+                for payload in self.PAYLOADS:
+                    test_data = form_data.copy()
+                    test_data[field] = payload
+                    
+                    start_time = time.time()
+                    if method == 'post':
+                        resp = self.make_request(form_url, method='POST', data=test_data)
+                    else:
+                        resp = self.make_request(form_url, method='GET', params=test_data)
+                    elapsed = time.time() - start_time
+                    
+                    length_diff = abs(len(resp.text) - normal_length) if resp else 0
+                    print(f"Field: {field}, payload: {payload[:20]}, elapsed: {round(elapsed,2)}s, length_diff: {length_diff}", flush=True)
+                    
+                    if resp and (self._detect_sql_error(resp.text) or elapsed > self.threshold or length_diff > 500):
+                        print(f"SQL INJECTION FOUND in {field}! elapsed={elapsed}, length_diff={length_diff}", flush=True)
+                        self.add_vulnerability({
+                            "vuln_type": "sql_injection",
+                            "severity": "critical",
+                            "title": f"SQL Injection խոցելիություն form-ի {field} դաշտում",
+                            "description": f"SQL injection հայտնաբերված form-ի '{field}' դաշտում ({method.upper()})։ {'Time-based - response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'Boolean-based - response length difference: ' + str(length_diff) + ' bytes' if length_diff > 500 else 'SQL error հայտնաբերված'}",
+                            "url": form_url,
+                            "parameter": field,
+                            "method": method.upper(),
+                            "payload": payload,
+                            "evidence": f"Response length diff: {length_diff} bytes (normal: {normal_length}, payload: {len(resp.text) if resp else 0})",
+                            "recommendation": "Օգտագործեք parameterized queries կամ prepared statements։",
+                            "references": "https://owasp.org/www-community/attacks/SQL_Injection"
+                        })
+                        return
     
     def _detect_sql_error(self, response_text: str) -> bool:
-        """Հայտնաբերել SQL սխալները response-ում"""
         response_lower = response_text.lower()
         for signature in self.ERROR_SIGNATURES:
             if signature in response_lower:

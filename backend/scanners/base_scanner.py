@@ -17,6 +17,7 @@ class BaseScanner:
         self.parsed_url = urlparse(target_url)
         self.domain = self.parsed_url.netloc
         self.results = []
+        self.vulnerabilities = []
     
     def make_request(self, url: str, method: str = "GET", **kwargs) -> requests.Response:
         """HTTP հարցում"""
@@ -31,6 +32,7 @@ class BaseScanner:
     def add_vulnerability(self, vuln: Dict[str, Any]):
         """Խոցելիություն ավելացնել"""
         self.results.append(vuln)
+        self.vulnerabilities.append(vuln)
     
     def get_results(self) -> List[Dict[str, Any]]:
         """Արդյունքներ վերադարձնել"""

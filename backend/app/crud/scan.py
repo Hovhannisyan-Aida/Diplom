@@ -17,7 +17,8 @@ def create_scan(db: Session, scan: ScanCreate, user_id: int):
         user_id=user_id,
         target_url=scan.target_url,
         scan_type=scan.scan_type,
-        status=ScanStatus.pending  # ← lowercase
+        status=ScanStatus.pending,  # ← lowercase
+        custom_options=getattr(scan, 'custom_options', None)
     )
     db.add(db_scan)
     db.commit()
