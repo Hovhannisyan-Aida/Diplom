@@ -25,6 +25,8 @@ class SQLInjectionScanner(BaseScanner):
     ERROR_SIGNATURES = [
         "sql syntax",
         "mysql_fetch",
+        "mysql_num_rows",
+        "mysql_result",
         "mysql error",
         "postgresql",
         "ora-01",
@@ -35,6 +37,13 @@ class SQLInjectionScanner(BaseScanner):
         "warning: mysql",
         "invalid query",
         "pg_query",
+        "supplied argument is not a valid mysql",
+        "expects parameter 1 to be resource",
+        "division by zero",
+        "microsoft ole db provider for sql server",
+        "odbc microsoft access",
+        "jdbc",
+        "sqlexception",
     ]
     
     def scan(self) -> List[Dict[str, Any]]:

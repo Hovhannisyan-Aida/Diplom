@@ -19,11 +19,18 @@ class BaseScanner:
         self.results = []
         self.vulnerabilities = []
     
+    HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+    }
+
     def make_request(self, url: str, method: str = "GET", **kwargs) -> requests.Response:
         """HTTP հարցում"""
         try:
-            # SSL verification-ը անջատել (միայն testing-ի համար)
-            response = requests.request(method, url, timeout=10, verify=False, **kwargs)
+            headers = kwargs.pop("headers", {})
+            merged_headers = {**self.HEADERS, **headers}
+            response = requests.request(method, url, timeout=10, verify=False, headers=merged_headers, **kwargs)
             return response
         except requests.RequestException as e:
             logger.error(f"Request failed for {url}: {str(e)}")

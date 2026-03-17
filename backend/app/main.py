@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1 import auth, scans, users
+from app.api.v1 import auth, scans, users, test
 from app.db.session import engine
 from app.db.base import Base
 
@@ -27,6 +27,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["Authentication"])
 app.include_router(users.router, prefix=f"{settings.API_V1_PREFIX}/users", tags=["Users"])
 app.include_router(scans.router, prefix=f"{settings.API_V1_PREFIX}/scans", tags=["Scans"])
+app.include_router(test.router, prefix=f"{settings.API_V1_PREFIX}/test", tags=["Test"])
 
 @app.get("/")
 def root():
