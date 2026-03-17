@@ -8,11 +8,19 @@ import LogoutModal from '../components/LogoutModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import './ScanDetails.css';
 
+const formatDuration = (seconds) => {
+  if (!seconds) return '-';
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+};
+
 // Helper function - ԴՈՒՐՍՈՒՄ component-ից
 const formatDateTime = (dateString) => {
   if (!dateString) return '-';
-  
-  const date = new Date(dateString);
+  const utc = dateString.endsWith('Z') || dateString.includes('+') ? dateString : dateString + 'Z';
+  const date = new Date(utc);
   
   // Automatically use user's local timezone
   return date.toLocaleString(undefined, {
@@ -147,7 +155,7 @@ function ScanDetails() {
           <div className="info-card">
             <div className="info-label">{t('scanDetails.duration')}</div>
             <div className="info-value">
-              {scan.scan_duration ? `${scan.scan_duration}s` : '-'}
+              {formatDuration(scan.scan_duration)}
             </div>
           </div>
 

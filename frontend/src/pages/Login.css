@@ -280,3 +280,20 @@
     right: 15px;
   }
 }
+
+.password-requirements {
+  list-style: none;
+  padding: 8px 12px;
+  margin: 6px 0 0;
+  background: #fff8f0;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.password-requirements li {
+  font-size: 12px;
+  color: #b45309;
+}

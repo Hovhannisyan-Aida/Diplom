@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { scansAPI } from '../services/api';
 import { Shield, Globe, AlertCircle, Check } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import ScanningLoader from '../components/ScanningLoader';
 import './NewScan.css';
 
 function NewScan() {
@@ -16,6 +18,30 @@ function NewScan() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
+  const [pendingPath, setPendingPath] = useState(null);
+
+  // Block browser close / refresh during scan
+  useEffect(() => {
+    if (!loading) return;
+    const handler = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [loading]);
+
+  const safeNavigate = (path) => {
+    if (loading) {
+      setPendingPath(path);
+      setShowLeaveWarning(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const confirmLeave = () => {
+    setShowLeaveWarning(false);
+    if (pendingPath) navigate(pendingPath);
+  };
   
   // Custom scan options
   const [customOptions, setCustomOptions] = useState({
@@ -112,29 +138,50 @@ function NewScan() {
 
   return (
     <div className="new-scan-page">
+      {loading && <ScanningLoader url={targetUrl} />}
       <nav className="navbar">
         <div className="navbar-brand">
           <Shield size={24} />
           <span>Vulnerability Scanner</span>
         </div>
         <div className="navbar-menu">
-          <button onClick={() => navigate('/dashboard')} className="nav-link">
+          <button onClick={() => safeNavigate('/dashboard')} className="nav-link">
             {t('nav.dashboard')}
           </button>
-          <button onClick={() => navigate('/scans')} className="nav-link">
+          <button onClick={() => safeNavigate('/scans')} className="nav-link">
             {t('nav.scans')}
           </button>
-          <button onClick={() => navigate('/new-scan')} className="nav-link nav-link-active">
+          <button onClick={() => safeNavigate('/new-scan')} className="nav-link nav-link-active">
             {t('nav.newScan')}
           </button>
           <LanguageSwitcher />
-          <button onClick={() => setShowLogoutModal(true)} className="btn-logout">
+          <button onClick={() => loading ? safeNavigate('/login') : setShowLogoutModal(true)} className="btn-logout">
             {t('nav.logout')}
           </button>
         </div>
       </nav>
 
-      <LogoutModal 
+      {showLeaveWarning && (
+        <div className="leave-warning-overlay">
+          <div className="leave-warning-card">
+            <div className="leave-warning-icon">⚠️</div>
+            <h3 className="leave-warning-title">Scan in Progress</h3>
+            <p className="leave-warning-message">
+              A scan is currently running. If you leave now, the scan will be dismissed and results will be lost.
+            </p>
+            <div className="leave-warning-actions">
+              <button className="leave-btn-stay" onClick={() => setShowLeaveWarning(false)}>
+                Stay on Page
+              </button>
+              <button className="leave-btn-leave" onClick={confirmLeave}>
+                Leave Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <LogoutModal
         isOpen={showLogoutModal}
         onConfirm={() => {
           setShowLogoutModal(false);
@@ -268,7 +315,7 @@ function NewScan() {
           <div className="form-actions">
             <button
               type="button"
-              onClick={() => navigate('/scans')}
+              onClick={() => safeNavigate('/scans')}
               className="btn-cancel"
               disabled={loading}
             >

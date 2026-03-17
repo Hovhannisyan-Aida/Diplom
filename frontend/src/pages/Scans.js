@@ -8,11 +8,19 @@ import LogoutModal from '../components/LogoutModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import './Scans.css';
 
+const formatDuration = (seconds) => {
+  if (!seconds) return '-';
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+};
+
 // Helper function - ԴՈՒՐՍՈՒՄ component-ից
 const formatDateTime = (dateString) => {
   if (!dateString) return '-';
-  
-  const date = new Date(dateString);
+  const utc = dateString.endsWith('Z') || dateString.includes('+') ? dateString : dateString + 'Z';
+  const date = new Date(utc);
   
   return date.toLocaleString(undefined, {
     year: 'numeric',
@@ -39,7 +47,10 @@ function Scans() {
   const loadScans = async () => {
     try {
       const response = await scansAPI.getAll();
-      setScans(response.data);
+      const sorted = [...response.data].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+      setScans(sorted);
     } catch (error) {
       console.error('Failed to load scans:', error);
     } finally {
@@ -172,7 +183,7 @@ function Scans() {
                           <span className="scans-no-vulns">-</span>
                         )}
                       </td>
-                      <td>{scan.scan_duration ? `${scan.scan_duration}s` : '-'}</td>
+                      <td>{formatDuration(scan.scan_duration)}</td>
                       <td className="scans-created-cell">
                         {formatDateTime(scan.created_at)}
                       </td>

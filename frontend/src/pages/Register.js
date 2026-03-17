@@ -6,24 +6,58 @@ import { Shield } from 'lucide-react';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import './Login.css';
 
+const FULL_NAME_REGEX = /^[a-zA-ZÀ-ÖØ-öø-ÿА-яЁёԱ-Ֆա-ֆ]{2,}(\s[a-zA-ZÀ-ÖØ-öø-ÿА-яЁёԱ-Ֆա-ֆ]{2,})+$/;
+const EMAIL_REGEX    = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 function Register() {
   const { t } = useTranslation();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState([]);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const validatePassword = (pwd) => {
+    const errors = [];
+    if (pwd.length < 8)                errors.push(t('register.pwdMinLength'));
+    if (!/[A-Z]/.test(pwd))            errors.push(t('register.pwdUppercase'));
+    if (!/[0-9]/.test(pwd))            errors.push(t('register.pwdNumber'));
+    if (!/[^a-zA-Z0-9]/.test(pwd))     errors.push(t('register.pwdSpecial'));
+    return errors;
+  };
+
+  const handlePasswordChange = (e) => {
+    const val = e.target.value;
+    setPassword(val);
+    setPasswordErrors(val ? validatePassword(val) : []);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
+    if (!FULL_NAME_REGEX.test(fullName.trim())) {
+      setError('Full name must contain at least first and last name (letters only).');
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    const pwErrors = validatePassword(password);
+    if (pwErrors.length > 0) {
+      setPasswordErrors(pwErrors);
+      return;
+    }
+
+    setLoading(true);
     try {
       await register(email, password, fullName);
-      alert(t('toast.registerSuccess'));
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.detail || t('toast.registerFailed'));
@@ -36,7 +70,7 @@ function Register() {
     <div className="login-container">
       <div className="login-box">
         <LanguageSwitcher />
-        
+
         <div className="login-header">
           <Shield size={48} className="logo-icon" />
           <h1>{t('register.title')}</h1>
@@ -44,9 +78,7 @@ function Register() {
         </div>
 
         {error && (
-          <div className="error-message">
-            {error}
-          </div>
+          <div className="error-message">{error}</div>
         )}
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -80,10 +112,17 @@ function Register() {
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               placeholder="••••••••"
               required
             />
+            {passwordErrors.length > 0 && (
+              <ul className="password-requirements">
+                {passwordErrors.map((err, i) => (
+                  <li key={i}>✗ {err}</li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <button type="submit" className="btn-primary" disabled={loading}>
