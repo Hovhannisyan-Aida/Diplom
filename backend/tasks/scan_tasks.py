@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 def run_vulnerability_scan(scan_id: int):
     db = SessionLocal()
-    
+    scan = None
+
     try:
         print(f"STARTING SCAN {scan_id}", flush=True)
         
@@ -117,10 +118,11 @@ def run_vulnerability_scan(scan_id: int):
         
     except Exception as e:
         print(f"Scan {scan_id} failed: {str(e)}", flush=True)
-        scan.status = ScanStatus.failed
-        scan.error_message = str(e)
-        scan.completed_at = datetime.utcnow()
-        db.commit()
+        if scan is not None:
+            scan.status = ScanStatus.failed
+            scan.error_message = str(e)
+            scan.completed_at = datetime.utcnow()
+            db.commit()
     
     finally:
         db.close()

@@ -22,7 +22,7 @@ function Register() {
     setLoading(true);
 
     try {
-      await register(fullName, email, password);
+      await register(email, password, fullName);
       alert(t('toast.registerSuccess'));
       navigate('/login');
     } catch (err) {

@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 def run_vulnerability_scan(scan_id: int):
     """Run vulnerability scan based on scan type"""
     db = SessionLocal()
-    
+    scan = None
+
     try:
         logger.info(f"STARTING SCAN {scan_id}")
         
