@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { scansAPI } from '../services/api';
 import { Shield, Download, ArrowLeft } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import './ScanDetails.css';
 
 // Helper function - ԴՈՒՐՍՈՒՄ component-ից
@@ -98,6 +99,7 @@ function ScanDetails() {
           <button onClick={() => navigate('/new-scan')} className="nav-link">
             {t('nav.newScan')}
           </button>
+          <LanguageSwitcher />
           <button onClick={() => setShowLogoutModal(true)} className="btn-logout">
             {t('nav.logout')}
           </button>

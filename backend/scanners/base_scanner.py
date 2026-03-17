@@ -11,13 +11,18 @@ logger = logging.getLogger(__name__)
 
 class BaseScanner:
     """Հիմնական scanner class"""
-    
-    def __init__(self, target_url: str):
+
+    def __init__(self, target_url: str, language: str = 'en'):
         self.target_url = target_url
         self.parsed_url = urlparse(target_url)
         self.domain = self.parsed_url.netloc
         self.results = []
         self.vulnerabilities = []
+        self.language = language
+
+    def t(self, en: str, hy: str) -> str:
+        """Return text in selected language"""
+        return hy if self.language == 'hy' else en
     
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",

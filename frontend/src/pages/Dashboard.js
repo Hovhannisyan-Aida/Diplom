@@ -6,6 +6,7 @@ import { scansAPI } from '../services/api';
 import { Shield, Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import LogoutModal from '../components/LogoutModal';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -76,6 +77,7 @@ function Dashboard() {
           <button onClick={() => navigate('/new-scan')} className="nav-link">
             {t('nav.newScan')}
           </button>
+          <LanguageSwitcher />
           <button onClick={() => setShowLogoutModal(true)} className="btn-logout">
             {t('nav.logout')}
           </button>

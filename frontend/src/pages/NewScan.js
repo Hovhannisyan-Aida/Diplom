@@ -8,7 +8,7 @@ import LogoutModal from '../components/LogoutModal';
 import './NewScan.css';
 
 function NewScan() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [targetUrl, setTargetUrl] = useState('');
@@ -94,13 +94,12 @@ function NewScan() {
     try {
       const scanData = {
         target_url: targetUrl,
-        scan_type: scanType
+        scan_type: scanType,
+        custom_options: {
+          ...(scanType === 'custom' ? customOptions : {}),
+          language: i18n.language
+        }
       };
-
-      // Add custom options if custom scan
-      if (scanType === 'custom') {
-        scanData.custom_options = customOptions;
-      }
 
       const response = await scansAPI.create(scanData);
       navigate(`/scans/${response.data.id}`);
@@ -128,6 +127,7 @@ function NewScan() {
           <button onClick={() => navigate('/new-scan')} className="nav-link nav-link-active">
             {t('nav.newScan')}
           </button>
+          <LanguageSwitcher />
           <button onClick={() => setShowLogoutModal(true)} className="btn-logout">
             {t('nav.logout')}
           </button>

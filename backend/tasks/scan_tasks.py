@@ -30,72 +30,73 @@ def run_vulnerability_scan(scan_id: int):
         
         target_url = scan.target_url
         all_vulnerabilities = []
-        
+        custom_options = dict(scan.custom_options) if scan.custom_options else {}
+        language = custom_options.get('language', 'en')
+
         if scan.scan_type.value == "quick":
             print(f"Running QUICK scan for {target_url}", flush=True)
-            headers_scanner = SecurityHeadersScanner(target_url)
+            headers_scanner = SecurityHeadersScanner(target_url, language=language)
             headers_vulns = headers_scanner.scan()
             if headers_vulns:
                 all_vulnerabilities.extend(headers_vulns)
-        
+
         elif scan.scan_type.value == "custom":
             print(f"Running CUSTOM scan for {target_url}", flush=True)
-            custom_options = dict(scan.custom_options) if scan.custom_options else {}
-            
+
             if custom_options.get('sql_injection', False):
                 print("Running SQL Injection scanner (custom)", flush=True)
-                sql_scanner = SQLInjectionScanner(target_url)
+                sql_scanner = SQLInjectionScanner(target_url, language=language)
                 sql_vulns = sql_scanner.scan()
                 if sql_vulns:
                     all_vulnerabilities.extend(sql_vulns)
-            
+
             if custom_options.get('xss', False):
                 print("Running XSS scanner (custom)", flush=True)
-                xss_scanner = XSSScanner(target_url)
+                xss_scanner = XSSScanner(target_url, language=language)
                 xss_vulns = xss_scanner.scan()
                 if xss_vulns:
                     all_vulnerabilities.extend(xss_vulns)
-            
+
             if custom_options.get('security_headers', False):
                 print("Running Security Headers scanner (custom)", flush=True)
-                headers_scanner = SecurityHeadersScanner(target_url)
+                headers_scanner = SecurityHeadersScanner(target_url, language=language)
                 headers_vulns = headers_scanner.scan()
                 if headers_vulns:
                     all_vulnerabilities.extend(headers_vulns)
-            
+
             if custom_options.get('crypto', False):
                 print("Running Crypto scanner (custom)", flush=True)
-                crypto_scanner = CryptoScanner(target_url)
+                crypto_scanner = CryptoScanner(target_url, language=language)
                 crypto_vulns = crypto_scanner.scan()
                 if crypto_vulns:
                     all_vulnerabilities.extend(crypto_vulns)
-        
+
         else:
             print(f"Running FULL scan for {target_url}", flush=True)
-            
+
             print("Running SQL Injection scanner", flush=True)
-            sql_scanner = SQLInjectionScanner(target_url)
+            sql_scanner = SQLInjectionScanner(target_url, language=language)
             sql_vulns = sql_scanner.scan()
             print(f"SQL found: {len(sql_vulns)}", flush=True)
             if sql_vulns:
                 all_vulnerabilities.extend(sql_vulns)
-            
+
             print("Running XSS scanner", flush=True)
-            xss_scanner = XSSScanner(target_url)
+            xss_scanner = XSSScanner(target_url, language=language)
             xss_vulns = xss_scanner.scan()
             print(f"XSS found: {len(xss_vulns)}", flush=True)
             if xss_vulns:
                 all_vulnerabilities.extend(xss_vulns)
-            
+
             print("Running Security Headers scanner", flush=True)
-            headers_scanner = SecurityHeadersScanner(target_url)
+            headers_scanner = SecurityHeadersScanner(target_url, language=language)
             headers_vulns = headers_scanner.scan()
             print(f"Headers found: {len(headers_vulns)}", flush=True)
             if headers_vulns:
                 all_vulnerabilities.extend(headers_vulns)
-            
+
             print("Running Crypto scanner", flush=True)
-            crypto_scanner = CryptoScanner(target_url)
+            crypto_scanner = CryptoScanner(target_url, language=language)
             crypto_vulns = crypto_scanner.scan()
             print(f"Crypto found: {len(crypto_vulns)}", flush=True)
             if crypto_vulns:

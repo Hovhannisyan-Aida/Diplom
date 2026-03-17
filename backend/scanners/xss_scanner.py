@@ -48,14 +48,26 @@ class XSSScanner(BaseScanner):
                     self.add_vulnerability({
                         "vuln_type": "xss",
                         "severity": "high",
-                        "title": f"Reflected XSS խոցելիություն {param} պարամետրում",
-                        "description": f"XSS payload reflected է response-ում '{param}' պարամետրի միջոցով։",
+                        "title": self.t(
+                            f"Reflected XSS vulnerability in parameter '{param}'",
+                            f"Reflected XSS խոցելիություն {param} պարամետրում"
+                        ),
+                        "description": self.t(
+                            f"XSS payload was reflected in the response via the '{param}' parameter.",
+                            f"XSS payload reflected է response-ում '{param}' պարամետրի միջոցով։"
+                        ),
                         "url": test_url,
                         "parameter": param,
                         "method": "GET",
                         "payload": payload,
-                        "evidence": f"Payload հայտնաբերված response-ում՝ {payload[:50]}",
-                        "recommendation": "Escape արեք բոլոր user inputs-ը։ Implement արեք CSP headers։",
+                        "evidence": self.t(
+                            f"Payload found in response: {payload[:50]}",
+                            f"Payload հայտնաբերված response-ում՝ {payload[:50]}"
+                        ),
+                        "recommendation": self.t(
+                            "Escape all user inputs. Implement CSP headers.",
+                            "Escape արեք բոլոր user inputs-ը։ Implement արեք CSP headers։"
+                        ),
                         "references": "https://owasp.org/www-community/attacks/xss/"
                     })
                     return
@@ -98,14 +110,26 @@ class XSSScanner(BaseScanner):
                         self.add_vulnerability({
                             "vuln_type": "xss",
                             "severity": "high",
-                            "title": f"Reflected XSS խոցելիություն form-ի {field} դաշտում",
-                            "description": f"XSS payload reflected է response-ում form-ի '{field}' դաշտի միջոցով ({method.upper()})։",
+                            "title": self.t(
+                                f"Reflected XSS vulnerability in form field '{field}'",
+                                f"Reflected XSS խոցելիություն form-ի {field} դաշտում"
+                            ),
+                            "description": self.t(
+                                f"XSS payload was reflected in the response via form field '{field}' ({method.upper()}).",
+                                f"XSS payload reflected է response-ում form-ի '{field}' դաշտի միջոցով ({method.upper()})։"
+                            ),
                             "url": form_url,
                             "parameter": field,
                             "method": method.upper(),
                             "payload": payload,
-                            "evidence": f"Payload հայտնաբերված response-ում",
-                            "recommendation": "Escape արեք բոլոր user inputs-ը։ Implement արեք CSP headers։",
+                            "evidence": self.t(
+                                "Payload found in response",
+                                "Payload հայտնաբերված response-ում"
+                            ),
+                            "recommendation": self.t(
+                                "Escape all user inputs. Implement CSP headers.",
+                                "Escape արեք բոլոր user inputs-ը։ Implement արեք CSP headers։"
+                            ),
                             "references": "https://owasp.org/www-community/attacks/xss/"
                         })
                         return

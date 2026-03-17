@@ -77,18 +77,31 @@ class SQLInjectionScanner(BaseScanner):
                     elapsed = time.time() - start_time
                     
                     if response and (self._detect_sql_error(response.text) or elapsed > self.threshold):
+                        detection = 'Time-based' if elapsed > self.threshold else 'Error-based'
                         print(f"SQL INJECTION FOUND in param {param}! elapsed={elapsed}", flush=True)
                         self.add_vulnerability({
                             "vuln_type": "sql_injection",
                             "severity": "critical",
-                            "title": f"SQL Injection խոցելիություն {param} պարամետրում",
-                            "description": f"SQL injection հայտնաբերված '{param}' պարամետրում։ {'Time-based - response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error հայտնաբերված'}",
+                            "title": self.t(
+                                f"SQL Injection vulnerability in parameter '{param}'",
+                                f"SQL Injection խոցելիություն {param} պարամետրում"
+                            ),
+                            "description": self.t(
+                                f"SQL injection detected in '{param}' parameter. {detection} - {'response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error detected'}",
+                                f"SQL injection հայտնաբերված '{param}' պարամետրում։ {detection} - {'response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error հայտնաբերված'}"
+                            ),
                             "url": test_url,
                             "parameter": param,
                             "method": "GET",
                             "payload": payload,
-                            "evidence": f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature հայտնաբերված response-ում'}",
-                            "recommendation": "Օգտագործեք parameterized queries կամ prepared statements։",
+                            "evidence": self.t(
+                                f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature found in response'}",
+                                f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature հայտնաբերված response-ում'}"
+                            ),
+                            "recommendation": self.t(
+                                "Use parameterized queries or prepared statements.",
+                                "Օգտագործեք parameterized queries կամ prepared statements։"
+                            ),
                             "references": "https://owasp.org/www-community/attacks/SQL_Injection"
                         })
                         return
@@ -100,20 +113,33 @@ class SQLInjectionScanner(BaseScanner):
                     start_time = time.time()
                     response = self.make_request(test_url)
                     elapsed = time.time() - start_time
-                    
+
                     if response and (self._detect_sql_error(response.text) or elapsed > self.threshold):
+                        detection = 'Time-based' if elapsed > self.threshold else 'Error-based'
                         print(f"SQL INJECTION FOUND in param {param}! elapsed={elapsed}", flush=True)
                         self.add_vulnerability({
                             "vuln_type": "sql_injection",
                             "severity": "critical",
-                            "title": f"SQL Injection խոցելիություն {param} պարամետրում",
-                            "description": f"SQL injection հայտնաբերված '{param}' պարամետրում։ {'Time-based - response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error հայտնաբերված'}",
+                            "title": self.t(
+                                f"SQL Injection vulnerability in parameter '{param}'",
+                                f"SQL Injection խոցելիություն {param} պարամետրում"
+                            ),
+                            "description": self.t(
+                                f"SQL injection detected in '{param}' parameter. {detection} - {'response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error detected'}",
+                                f"SQL injection հայտնաբերված '{param}' պարամետրում։ {detection} - {'response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error հայտնաբերված'}"
+                            ),
                             "url": test_url,
                             "parameter": param,
                             "method": "GET",
                             "payload": payload,
-                            "evidence": f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature հայտնաբերված response-ում'}",
-                            "recommendation": "Օգտագործեք parameterized queries կամ prepared statements։",
+                            "evidence": self.t(
+                                f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature found in response'}",
+                                f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature հայտնաբերված response-ում'}"
+                            ),
+                            "recommendation": self.t(
+                                "Use parameterized queries or prepared statements.",
+                                "Օգտագործեք parameterized queries կամ prepared statements։"
+                            ),
                             "references": "https://owasp.org/www-community/attacks/SQL_Injection"
                         })
                         return
@@ -170,17 +196,27 @@ class SQLInjectionScanner(BaseScanner):
                     
                     if resp and (self._detect_sql_error(resp.text) or elapsed > self.threshold or length_diff > 500):
                         print(f"SQL INJECTION FOUND in {field}! elapsed={elapsed}, length_diff={length_diff}", flush=True)
+                        detection = 'Time-based' if elapsed > self.threshold else 'Boolean-based' if length_diff > 500 else 'Error-based'
                         self.add_vulnerability({
                             "vuln_type": "sql_injection",
                             "severity": "critical",
-                            "title": f"SQL Injection խոցելիություն form-ի {field} դաշտում",
-                            "description": f"SQL injection հայտնաբերված form-ի '{field}' դաշտում ({method.upper()})։ {'Time-based - response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'Boolean-based - response length difference: ' + str(length_diff) + ' bytes' if length_diff > 500 else 'SQL error հայտնաբերված'}",
+                            "title": self.t(
+                                f"SQL Injection vulnerability in form field '{field}'",
+                                f"SQL Injection խոցելիություն form-ի {field} դաշտում"
+                            ),
+                            "description": self.t(
+                                f"SQL injection detected in form field '{field}' ({method.upper()}). {detection}.",
+                                f"SQL injection հայտնաբերված form-ի '{field}' դաշտում ({method.upper()})։ {detection}։"
+                            ),
                             "url": form_url,
                             "parameter": field,
                             "method": method.upper(),
                             "payload": payload,
                             "evidence": f"Response length diff: {length_diff} bytes (normal: {normal_length}, payload: {len(resp.text) if resp else 0})",
-                            "recommendation": "Օգտագործեք parameterized queries կամ prepared statements։",
+                            "recommendation": self.t(
+                                "Use parameterized queries or prepared statements.",
+                                "Օգտագործեք parameterized queries կամ prepared statements։"
+                            ),
                             "references": "https://owasp.org/www-community/attacks/SQL_Injection"
                         })
                         return
