@@ -7,14 +7,12 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Retry connection to database
 max_retries = 5
-retry_delay = 5  # seconds
+retry_delay = 5
 
 for attempt in range(max_retries):
     try:
         engine = create_engine(settings.DATABASE_URL)
-        # Test connection
         with engine.connect() as conn:
             logger.info("Database connection successful")
         break

@@ -16,7 +16,6 @@ const formatDuration = (seconds) => {
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 };
 
-// Helper function - ԴՈՒՐՍՈՒՄ component-ից
 const formatDateTime = (dateString) => {
   if (!dateString) return '-';
   const utc = dateString.endsWith('Z') || dateString.includes('+') ? dateString : dateString + 'Z';

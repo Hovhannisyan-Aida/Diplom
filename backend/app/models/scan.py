@@ -17,27 +17,26 @@ class ScanType(enum.Enum):
 
 class Scan(Base):
     __tablename__ = "scans"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     target_url = Column(String(500), nullable=False)
     scan_type = Column(SQLEnum(ScanType), default=ScanType.full)
     status = Column(SQLEnum(ScanStatus), default=ScanStatus.pending)
-    
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
-    
+
     total_vulnerabilities = Column(Integer, default=0)
     critical_count = Column(Integer, default=0)
     high_count = Column(Integer, default=0)
     medium_count = Column(Integer, default=0)
     low_count = Column(Integer, default=0)
-    
-    scan_duration = Column(Integer, nullable=True)  # ← Վայրկյաններով
+
+    scan_duration = Column(Integer, nullable=True)
     error_message = Column(Text, nullable=True)
-    custom_options = Column(JSON, nullable=True)  # Custom scan options
-    
-    # Relationships
+    custom_options = Column(JSON, nullable=True)
+
     user = relationship("User", back_populates="scans")
     vulnerabilities = relationship("Vulnerability", back_populates="scan", cascade="all, delete-orphan")

@@ -5,7 +5,6 @@ router = APIRouter()
 
 @router.get("/sqli", response_class=PlainTextResponse)
 def vulnerable_sqli(id: str = "1"):
-    """Intentionally vulnerable endpoint for SQL injection testing/demo"""
     dangerous = ["'", '"', "--", ";", "OR", "AND", "UNION", "SELECT", "SLEEP", "WAITFOR"]
     is_injected = any(d.lower() in id.lower() for d in dangerous)
 

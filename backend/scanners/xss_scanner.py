@@ -19,10 +19,7 @@ class XSSScanner(BaseScanner):
     def scan(self) -> List[Dict[str, Any]]:
         logger.info(f"Starting XSS scan for {self.target_url}")
         
-        # 1. Test URL parameters
         self._test_url_parameters()
-        
-        # 2. Test forms
         self._test_forms()
         
         return self.get_results()

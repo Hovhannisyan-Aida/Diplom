@@ -16,13 +16,11 @@ const formatDuration = (seconds) => {
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 };
 
-// Helper function - ԴՈՒՐՍՈՒՄ component-ից
 const formatDateTime = (dateString) => {
   if (!dateString) return '-';
   const utc = dateString.endsWith('Z') || dateString.includes('+') ? dateString : dateString + 'Z';
   const date = new Date(utc);
-  
-  // Automatically use user's local timezone
+
   return date.toLocaleString(undefined, {
     year: 'numeric',
     month: '2-digit',

@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:8000/api/v1';
 
-// Create axios instance
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -10,7 +9,6 @@ const api = axios.create({
   },
 });
 
-// Add token to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -24,7 +22,6 @@ api.interceptors.request.use(
   }
 );
 
-// Auth API
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data, {
@@ -35,7 +32,6 @@ export const authAPI = {
   getCurrentUser: () => api.get('/auth/me'),
 };
 
-// Scans API
 export const scansAPI = {
   getAll: () => api.get('/scans/'),
   getById: (id) => api.get(`/scans/${id}`),

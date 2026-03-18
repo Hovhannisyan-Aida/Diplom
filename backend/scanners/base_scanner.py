@@ -4,13 +4,11 @@ from urllib.parse import urlparse
 import logging
 import urllib3
 
-# SSL warnings-ը անջատել
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logger = logging.getLogger(__name__)
 
 class BaseScanner:
-    """Հիմնական scanner class"""
 
     def __init__(self, target_url: str, language: str = 'en'):
         self.target_url = target_url
@@ -21,9 +19,8 @@ class BaseScanner:
         self.language = language
 
     def t(self, en: str, hy: str) -> str:
-        """Return text in selected language"""
         return hy if self.language == 'hy' else en
-    
+
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -31,7 +28,6 @@ class BaseScanner:
     }
 
     def make_request(self, url: str, method: str = "GET", **kwargs) -> requests.Response:
-        """HTTP հարցում"""
         try:
             headers = kwargs.pop("headers", {})
             merged_headers = {**self.HEADERS, **headers}
@@ -40,12 +36,10 @@ class BaseScanner:
         except requests.RequestException as e:
             logger.error(f"Request failed for {url}: {str(e)}")
             return None
-    
+
     def add_vulnerability(self, vuln: Dict[str, Any]):
-        """Խոցելիություն ավելացնել"""
         self.results.append(vuln)
         self.vulnerabilities.append(vuln)
-    
+
     def get_results(self) -> List[Dict[str, Any]]:
-        """Արդյունքներ վերադարձնել"""
         return self.results

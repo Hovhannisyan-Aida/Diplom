@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class CryptoScanner(BaseScanner):
-    """Cryptographic failures ստուգող"""
 
     def scan(self) -> List[Dict[str, Any]]:
         logger.info(f"Starting Crypto scan for {self.target_url}")
@@ -22,7 +21,6 @@ class CryptoScanner(BaseScanner):
         hostname = parsed_url.hostname
         port = parsed_url.port or (443 if parsed_url.scheme == 'https' else 80)
 
-        # Check 1: HTTP instead of HTTPS
         if parsed_url.scheme != 'https':
             self.add_vulnerability({
                 "vuln_type": "cryptographic_failure",
@@ -34,7 +32,6 @@ class CryptoScanner(BaseScanner):
                 "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
             })
 
-            # Check 2: Does HTTP redirect to HTTPS?
             response = self.make_request(self.target_url, allow_redirects=False)
             if response:
                 location = response.headers.get("location", "")
@@ -52,7 +49,6 @@ class CryptoScanner(BaseScanner):
                     })
 
         else:
-            # Check 3: SSL/TLS configuration
             try:
                 context = ssl.create_default_context()
                 with socket.create_connection((hostname, port), timeout=10) as sock:
@@ -63,7 +59,6 @@ class CryptoScanner(BaseScanner):
 
                         print(f"TLS version: {version}, cipher: {cipher}", flush=True)
 
-                        # Check weak TLS version
                         if version in ['TLSv1', 'TLSv1.1', 'SSLv2', 'SSLv3']:
                             self.add_vulnerability({
                                 "vuln_type": "cryptographic_failure",
@@ -75,7 +70,6 @@ class CryptoScanner(BaseScanner):
                                 "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                             })
 
-                        # Check weak cipher suites
                         weak_ciphers = ['RC4', 'DES', '3DES', 'MD5', 'NULL', 'EXPORT']
                         if cipher and any(weak in str(cipher) for weak in weak_ciphers):
                             self.add_vulnerability({
@@ -88,7 +82,6 @@ class CryptoScanner(BaseScanner):
                                 "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                             })
 
-                        # Check 4: Certificate expiry
                         if cert:
                             expire_str = cert.get("notAfter", "")
                             if expire_str:
@@ -121,7 +114,6 @@ class CryptoScanner(BaseScanner):
 
             except ssl.SSLCertVerificationError as e:
                 err_str = str(e).lower()
-                # Check 5: Self-signed certificate
                 if "self signed" in err_str or "self-signed" in err_str or "unable to get local issuer" in err_str:
                     self.add_vulnerability({
                         "vuln_type": "cryptographic_failure",
@@ -157,7 +149,6 @@ class CryptoScanner(BaseScanner):
             except Exception as e:
                 logger.error(f"Crypto scan error: {str(e)}")
 
-        # Check 6: HSTS header
         response = self.make_request(self.target_url)
         if response:
             hsts = response.headers.get("strict-transport-security", "")
@@ -175,28 +166,23 @@ class CryptoScanner(BaseScanner):
             else:
                 print(f"HSTS header present: {hsts}", flush=True)
 
-        # Check 7: Weak/unsalted hashing detection
         self._check_weak_hashing()
 
         print(f"Crypto scan finished, found {len(self.results)} vulnerabilities", flush=True)
         return self.get_results()
 
     def _check_weak_hashing(self):
-        """Detect MD5/SHA1 hashes exposed in URL params, responses, cookies"""
         from urllib.parse import parse_qs, urlparse as _parse
 
-        # Regex patterns for MD5 (32 hex) and SHA1 (40 hex)
         md5_pattern = re.compile(r'\b[a-f0-9]{32}\b', re.IGNORECASE)
         sha1_pattern = re.compile(r'\b[a-f0-9]{40}\b', re.IGNORECASE)
 
-        # Known test values and their MD5/SHA1 hashes
         known_values = ["admin", "password", "123456", "test", "user", "guest"]
         known_hashes = {}
         for val in known_values:
             known_hashes[hashlib.md5(val.encode()).hexdigest()] = ("MD5", val)
             known_hashes[hashlib.sha1(val.encode()).hexdigest()] = ("SHA1", val)
 
-        # Check 1: URL parameters contain MD5/SHA1 hashes
         parsed = _parse(self.target_url)
         url_params = parse_qs(parsed.query)
         for param, values in url_params.items():
@@ -234,7 +220,6 @@ class CryptoScanner(BaseScanner):
         found_md5 = md5_pattern.findall(body)
         found_sha1 = sha1_pattern.findall(body)
 
-        # Check if any found hash matches a known unsalted hash
         for h in found_md5 + found_sha1:
             if h.lower() in known_hashes:
                 algo, original = known_hashes[h.lower()]
@@ -252,7 +237,6 @@ class CryptoScanner(BaseScanner):
                 })
                 return
 
-        # Check cookies for MD5/SHA1 hash values
         for cookie_name, cookie_value in cookies.items():
             for h in md5_pattern.findall(cookie_value) + sha1_pattern.findall(cookie_value):
                 if h.lower() in known_hashes:
@@ -270,7 +254,6 @@ class CryptoScanner(BaseScanner):
                     })
                     return
 
-        # If MD5 or SHA1 hashes appear in response body (even unknown ones) — flag as suspicious
         if found_md5:
             print(f"Found {len(found_md5)} potential MD5 hashes in response body", flush=True)
             self.add_vulnerability({

@@ -10,7 +10,6 @@ import ScanDetails from './pages/ScanDetails';
 import Scans from './pages/Scans';
 import './App.css';
 
-// Protected Route Component
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
 
@@ -21,7 +20,6 @@ function ProtectedRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/login" />;
 }
 
-// Public Route Component (redirect to dashboard if already logged in)
 function PublicRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
 

@@ -5,7 +5,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SecurityHeadersScanner(BaseScanner):
-    """Security headers ստուգող"""
 
     REQUIRED_HEADERS = {
         "X-Frame-Options": {

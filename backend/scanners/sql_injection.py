@@ -171,7 +171,6 @@ class SQLInjectionScanner(BaseScanner):
             if not form_data:
                 continue
             
-            # Get normal response length for comparison
             if method == 'post':
                 normal_resp = self.make_request(form_url, method='POST', data=form_data)
             else:

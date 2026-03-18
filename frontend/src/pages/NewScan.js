@@ -21,7 +21,6 @@ function NewScan() {
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [pendingPath, setPendingPath] = useState(null);
 
-  // Block browser close / refresh during scan
   useEffect(() => {
     if (!loading) return;
     const handler = (e) => { e.preventDefault(); e.returnValue = ''; };
@@ -43,7 +42,6 @@ function NewScan() {
     if (pendingPath) navigate(pendingPath);
   };
   
-  // Custom scan options
   const [customOptions, setCustomOptions] = useState({
     sql_injection: true,
     xss: true,
@@ -106,7 +104,6 @@ function NewScan() {
       return;
     }
 
-    // Validate custom scan has at least one scanner selected
     if (scanType === 'custom') {
       const hasAnySelected = Object.values(customOptions).some(v => v === true);
       if (!hasAnySelected) {
