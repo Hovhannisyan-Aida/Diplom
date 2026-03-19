@@ -141,13 +141,13 @@ function ScanDetails() {
           <div className="info-card">
             <div className="info-label">{t('scanDetails.status')}</div>
             <div className={`status-badge status-${scan.status}`}>
-              {scan.status}
+              {t(`status.${scan.status}`)}
             </div>
           </div>
 
           <div className="info-card">
             <div className="info-label">{t('scanDetails.scanType')}</div>
-            <div className="info-value">{scan.scan_type}</div>
+            <div className="info-value">{t(`scanType.${scan.scan_type}`)}</div>
           </div>
 
           <div className="info-card">

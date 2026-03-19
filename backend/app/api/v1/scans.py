@@ -9,7 +9,7 @@ from app.schemas.vulnerability import VulnerabilityInDB
 from app.crud import scan as crud_scan
 from app.api.v1.auth import get_current_user
 from app.models.scan import ScanStatus
-from tasks.scan_tasks import run_vulnerability_scan
+from app.tasks.scan_tasks import run_vulnerability_scan
 from app.models.vulnerability import Vulnerability
 
 router = APIRouter()

@@ -1,8 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Shield } from 'lucide-react';
 import './ScanningLoader.css';
 
 function ScanningLoader({ url }) {
+  const { t } = useTranslation();
   return (
     <div className="scanning-overlay">
       <div className="scanning-card">
@@ -13,7 +15,7 @@ function ScanningLoader({ url }) {
         </div>
 
         <div className="scanning-text">
-          Scanning<span className="dots"><span>.</span><span>.</span><span>.</span></span>
+          {t('newScan.scanning')}<span className="dots"><span>.</span><span>.</span><span>.</span></span>
         </div>
 
         {url && <div className="scanning-url">{url}</div>}

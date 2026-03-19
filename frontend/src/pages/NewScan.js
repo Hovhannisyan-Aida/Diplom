@@ -53,24 +53,24 @@ function NewScan() {
     switch (scanType) {
       case 'full':
         return [
-          'SQL Injection vulnerabilities',
-          'Cross-Site Scripting (XSS)',
-          'Security Headers configuration',
-          'Cryptographic Failures (SSL/TLS)',
-          'Common web vulnerabilities'
+          t('newScan.sqlInjection'),
+          t('newScan.xss'),
+          t('newScan.securityHeaders'),
+          t('newScan.cryptoFailures'),
+          t('newScan.commonVulnerabilities')
         ];
       case 'quick':
         return [
-          'Security Headers configuration',
-          'Basic security checks'
+          t('newScan.securityHeaders'),
+          t('newScan.basicSecurityChecks')
         ];
       case 'custom':
         const features = [];
-        if (customOptions.sql_injection) features.push('SQL Injection vulnerabilities');
-        if (customOptions.xss) features.push('Cross-Site Scripting (XSS)');
-        if (customOptions.security_headers) features.push('Security Headers configuration');
-        if (customOptions.crypto) features.push('Cryptographic Failures (SSL/TLS)');
-        return features.length > 0 ? features : ['No scanners selected'];
+        if (customOptions.sql_injection) features.push(t('newScan.sqlInjection'));
+        if (customOptions.xss) features.push(t('newScan.xss'));
+        if (customOptions.security_headers) features.push(t('newScan.securityHeaders'));
+        if (customOptions.crypto) features.push(t('newScan.cryptoFailures'));
+        return features.length > 0 ? features : [t('newScan.noScannersSelected')];
       default:
         return [];
     }
@@ -88,26 +88,26 @@ function NewScan() {
     setError('');
 
     if (!targetUrl.trim()) {
-      setError('Please enter a target URL');
+      setError(t('newScan.errorEmptyUrl'));
       return;
     }
 
     if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-      setError('URL must start with http:// or https://');
+      setError(t('newScan.errorInvalidProtocol'));
       return;
     }
 
     try {
       new URL(targetUrl);
     } catch {
-      setError('Invalid URL format');
+      setError(t('newScan.errorInvalidUrl'));
       return;
     }
 
     if (scanType === 'custom') {
       const hasAnySelected = Object.values(customOptions).some(v => v === true);
       if (!hasAnySelected) {
-        setError('Please select at least one scanner for custom scan');
+        setError(t('newScan.errorNoScanners'));
         return;
       }
     }
@@ -127,7 +127,7 @@ function NewScan() {
       const response = await scansAPI.create(scanData);
       navigate(`/scans/${response.data.id}`);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create scan');
+      setError(err.response?.data?.detail || t('newScan.errorCreate'));
     } finally {
       setLoading(false);
     }
@@ -162,16 +162,16 @@ function NewScan() {
         <div className="leave-warning-overlay">
           <div className="leave-warning-card">
             <div className="leave-warning-icon">⚠️</div>
-            <h3 className="leave-warning-title">Scan in Progress</h3>
+            <h3 className="leave-warning-title">{t('newScan.scanInProgress')}</h3>
             <p className="leave-warning-message">
-              A scan is currently running. If you leave now, the scan will be dismissed and results will be lost.
+              {t('newScan.leaveWarning')}
             </p>
             <div className="leave-warning-actions">
               <button className="leave-btn-stay" onClick={() => setShowLeaveWarning(false)}>
-                Stay on Page
+                {t('newScan.stayOnPage')}
               </button>
               <button className="leave-btn-leave" onClick={confirmLeave}>
-                Leave Anyway
+                {t('newScan.leaveAnyway')}
               </button>
             </div>
           </div>
@@ -209,7 +209,7 @@ function NewScan() {
               className="form-input"
               disabled={loading}
             />
-            <p className="form-help">Enter the full URL including http:// or https://</p>
+            <p className="form-help">{t('newScan.targetUrlHelp')}</p>
           </div>
 
           <div className="form-group">
@@ -223,15 +223,15 @@ function NewScan() {
               className="form-select"
               disabled={loading}
             >
-              <option value="full">Full Scan - Comprehensive analysis (recommended)</option>
-              <option value="quick">Quick Scan - Basic security checks</option>
-              <option value="custom">Custom Scan - Choose specific scanners</option>
+              <option value="full">{t('newScan.fullScan')}</option>
+              <option value="quick">{t('newScan.quickScan')}</option>
+              <option value="custom">{t('newScan.customScan')}</option>
             </select>
           </div>
 
           {scanType === 'custom' && (
             <div className="custom-scan-options">
-              <h3 className="custom-scan-title">Select Scanners:</h3>
+              <h3 className="custom-scan-title">{t('newScan.selectScanners')}</h3>
               <div className="scanner-checkboxes">
                 <label className="scanner-checkbox">
                   <input
@@ -241,11 +241,11 @@ function NewScan() {
                     disabled={loading}
                   />
                   <span className="checkbox-label">
-                    SQL Injection Scanner
+                    {t('newScan.sqlScanner')}
                   </span>
-                  <span className="scanner-description">Tests for SQL injection vulnerabilities in parameters</span>
+                  <span className="scanner-description">{t('newScan.sqlScannerDesc')}</span>
                 </label>
-                          
+
                 <label className="scanner-checkbox">
                   <input
                     type="checkbox"
@@ -254,11 +254,11 @@ function NewScan() {
                     disabled={loading}
                   />
                   <span className="checkbox-label">
-                    XSS Scanner
+                    {t('newScan.xssScanner')}
                   </span>
-                  <span className="scanner-description">Tests for Cross-Site Scripting vulnerabilities</span>
+                  <span className="scanner-description">{t('newScan.xssScannerDesc')}</span>
                 </label>
-                          
+
                 <label className="scanner-checkbox">
                   <input
                     type="checkbox"
@@ -267,9 +267,9 @@ function NewScan() {
                     disabled={loading}
                   />
                   <span className="checkbox-label">
-                    Security Headers Scanner
+                    {t('newScan.headersScanner')}
                   </span>
-                  <span className="scanner-description">Checks for missing security headers</span>
+                  <span className="scanner-description">{t('newScan.headersScannerDesc')}</span>
                 </label>
                 <label className="scanner-checkbox">
                   <input
@@ -279,9 +279,9 @@ function NewScan() {
                     disabled={loading}
                   />
                   <span className="checkbox-label">
-                    Cryptographic Failures Scanner
+                    {t('newScan.cryptoScanner')}
                   </span>
-                  <span className="scanner-description">Checks for SSL/TLS issues and weak cryptography</span>
+                  <span className="scanner-description">{t('newScan.cryptoScannerDesc')}</span>
                 </label>
               </div>
             </div>
@@ -290,7 +290,7 @@ function NewScan() {
           <div className="scan-info-box">
             <div className="scan-info-header">
               <Shield size={20} className="scan-info-icon" />
-              <h3>What will be scanned?</h3>
+              <h3>{t('newScan.whatWillBeScanned')}</h3>
             </div>
             <ul className="scan-features-list">
               {getScanFeatures().map((feature, index) => (
@@ -323,7 +323,7 @@ function NewScan() {
               className="btn-submit"
               disabled={loading}
             >
-              {loading ? t('newScan.starting') : t('newScan.startScan')}
+              {loading ? t('newScan.creating') : t('newScan.startScan')}
             </button>
           </div>
         </form>

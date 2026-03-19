@@ -5,6 +5,7 @@ from app.db.session import SessionLocal
 from scanners.sql_injection import SQLInjectionScanner
 from scanners.xss_scanner import XSSScanner
 from scanners.security_headers import SecurityHeadersScanner
+from scanners.crypto_scanner import CryptoScanner
 from datetime import datetime
 import logging
 
@@ -64,6 +65,13 @@ def run_vulnerability_scan(scan_id: int):
                 if headers_vulns:
                     all_vulnerabilities.extend(headers_vulns)
 
+            if custom_options.get('crypto', False):
+                logger.info("Running Crypto scanner (custom)")
+                crypto_scanner = CryptoScanner(target_url)
+                crypto_vulns = crypto_scanner.scan()
+                if crypto_vulns:
+                    all_vulnerabilities.extend(crypto_vulns)
+
         else:
             logger.info(f"Running FULL scan for scan {scan_id}")
 
@@ -84,6 +92,12 @@ def run_vulnerability_scan(scan_id: int):
             headers_vulns = headers_scanner.scan()
             if headers_vulns:
                 all_vulnerabilities.extend(headers_vulns)
+
+            logger.info("Running Crypto scanner (full)")
+            crypto_scanner = CryptoScanner(target_url)
+            crypto_vulns = crypto_scanner.scan()
+            if crypto_vulns:
+                all_vulnerabilities.extend(crypto_vulns)
 
         for vuln_data in all_vulnerabilities:
             crud_vulnerability.create_vulnerability(
@@ -107,10 +121,11 @@ def run_vulnerability_scan(scan_id: int):
 
     except Exception as e:
         logger.error(f"Scan {scan_id} failed: {str(e)}")
-        scan.status = ScanStatus.failed
-        scan.error_message = str(e)
-        scan.completed_at = datetime.utcnow()
-        db.commit()
+        if scan is not None:
+            scan.status = ScanStatus.failed
+            scan.error_message = str(e)
+            scan.completed_at = datetime.utcnow()
+            db.commit()
 
     finally:
         db.close()

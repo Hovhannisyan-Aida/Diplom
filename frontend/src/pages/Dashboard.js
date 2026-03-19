@@ -41,7 +41,7 @@ function Dashboard() {
   if (loading) {
     return (
       <div className="dashboard">
-        <div className="loading">Loading...</div>
+        <div className="loading">{t('dashboard.loading')}</div>
       </div>
     );
   }
@@ -54,10 +54,10 @@ function Dashboard() {
   };
 
   const chartData = stats ? [
-    { name: 'Critical', value: stats.vulnerabilities_by_severity.critical, color: COLORS.critical },
-    { name: 'High', value: stats.vulnerabilities_by_severity.high, color: COLORS.high },
-    { name: 'Medium', value: stats.vulnerabilities_by_severity.medium, color: COLORS.medium },
-    { name: 'Low', value: stats.vulnerabilities_by_severity.low, color: COLORS.low },
+    { name: t('scanDetails.critical'), value: stats.vulnerabilities_by_severity.critical, color: COLORS.critical },
+    { name: t('scanDetails.high'), value: stats.vulnerabilities_by_severity.high, color: COLORS.high },
+    { name: t('scanDetails.medium'), value: stats.vulnerabilities_by_severity.medium, color: COLORS.medium },
+    { name: t('scanDetails.low'), value: stats.vulnerabilities_by_severity.low, color: COLORS.low },
   ].filter(item => item.value > 0) : [];
 
   return (
@@ -175,9 +175,9 @@ function Dashboard() {
                     labelLine={false}
                   >
                     {chartData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={COLORS[entry.name.toLowerCase()]}
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.color}
                         stroke="white"
                         strokeWidth={2}
                       />
@@ -215,7 +215,7 @@ function Dashboard() {
                       <p className="scan-date">{new Date(scan.created_at).toLocaleDateString()}</p>
                     </div>
                     <div className={`scan-badge ${scan.status}`}>
-                      {scan.status}
+                      {t(`status.${scan.status}`)}
                     </div>
                   </div>
                 ))}

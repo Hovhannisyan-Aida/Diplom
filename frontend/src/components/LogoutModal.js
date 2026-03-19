@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import './LogoutModal.css';
 
 function LogoutModal({ isOpen, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -14,14 +16,14 @@ function LogoutModal({ isOpen, onConfirm, onCancel }) {
             <line x1="21" y1="12" x2="9" y2="12"></line>
           </svg>
         </div>
-        <h2>Confirm Logout</h2>
-        <p>Are you sure you want to logout?</p>
+        <h2>{t('logout.title')}</h2>
+        <p>{t('logout.message')}</p>
         <div className="modal-actions">
           <button onClick={onCancel} className="btn-cancel">
-            Cancel
+            {t('logout.cancel')}
           </button>
           <button onClick={onConfirm} className="btn-confirm">
-            Yes, Logout
+            {t('logout.confirm')}
           </button>
         </div>
       </div>

@@ -40,12 +40,12 @@ function Register() {
     setError('');
 
     if (!FULL_NAME_REGEX.test(fullName.trim())) {
-      setError('Full name must contain at least first and last name (letters only).');
+      setError(t('register.invalidFullName'));
       return;
     }
 
     if (!EMAIL_REGEX.test(email.trim())) {
-      setError('Please enter a valid email address.');
+      setError(t('register.invalidEmail'));
       return;
     }
 

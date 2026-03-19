@@ -24,7 +24,7 @@ function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+      setError(err.response?.data?.detail || t('toast.loginFailed'));
     } finally {
       setLoading(false);
     }

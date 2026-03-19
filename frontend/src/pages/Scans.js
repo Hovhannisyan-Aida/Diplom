@@ -147,11 +147,11 @@ function Scans() {
                     <tr key={scan.id}>
                       <td className="scans-url-cell">{scan.target_url}</td>
                       <td>
-                        <span className="scans-type-badge">{scan.scan_type}</span>
+                        <span className="scans-type-badge">{t(`scanType.${scan.scan_type}`)}</span>
                       </td>
                       <td>
                         <span className={`scans-status-badge scans-status-${scan.status}`}>
-                          {scan.status}
+                          {t(`status.${scan.status}`)}
                         </span>
                       </td>
                       <td>

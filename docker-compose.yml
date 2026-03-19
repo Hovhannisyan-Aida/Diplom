@@ -55,11 +55,14 @@ services:
       - "5050:80"
     depends_on:
       - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
     networks:
       - scanner-network
 
 volumes:
   postgres_data:
+  pgadmin_data:
 
 networks:
   scanner-network:

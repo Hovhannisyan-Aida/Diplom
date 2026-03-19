@@ -15,7 +15,8 @@
     "vulnerabilitiesBySeverity": "Խոցելիություններ ըստ լրջության",
     "recentScans": "Վերջին սկանավորումները",
     "noData": "Խոցելիություններ չեն գտնվել",
-    "noScans": "Սկաններ դեռ չկան"
+    "noScans": "Սկաններ դեռ չկան",
+    "loading": "Բեռնվում է..."
   },
   "newScan": {
     "title": "Ստեղծել նոր սկան",
@@ -26,14 +27,36 @@
     "scanType": "Սկանավորման տեսակ",
     "quickScan": "Արագ սկան - Հիմնական անվտանգության ստուգումներ",
     "fullScan": "Ամբողջական սկան - Համապարփակ վերլուծություն (խորհուրդ է տրվում)",
-    "customScan": "Հարմարեցված սկան - Ընդլայնված կարգավորումներ",
+    "customScan": "Հարմարեցված սկան - Ընտրեք կոնկրետ սկաներներ",
     "whatWillBeScanned": "Ինչ կսկանավորվի?",
     "sqlInjection": "SQL Injection խոցելիություններ",
     "xss": "Cross-Site Scripting (XSS)",
     "securityHeaders": "Անվտանգության headers-ների կարգավորում",
+    "cryptoFailures": "Կրիպտոգրաֆիկ ձախողումներ (SSL/TLS)",
+    "basicSecurityChecks": "Հիմնական անվտանգության ստուգումներ",
     "commonVulnerabilities": "Ընդհանուր վեբ խոցելիություններ",
+    "noScannersSelected": "Սկաներներ չեն ընտրվել",
+    "selectScanners": "Ընտրեք սկաներներ:",
+    "sqlScanner": "SQL Injection սկաներ",
+    "sqlScannerDesc": "Ստուգում է SQL injection խոցելիությունների համար",
+    "xssScanner": "XSS սկաներ",
+    "xssScannerDesc": "Ստուգում է XSS խոցելիությունների համար",
+    "headersScanner": "Անվտանգության headers-ների սկաներ",
+    "headersScannerDesc": "Ստուգում է բացակայող անվտանգության headers-ների համար",
+    "cryptoScanner": "Կրիպտոգրաֆիկ ձախողումների սկաներ",
+    "cryptoScannerDesc": "Ստուգում է SSL/TLS խնդիրների համար",
+    "scanInProgress": "Սկանավորումն ընթացքում է",
+    "leaveWarning": "Սկանավորումն ընթացքում է: Եթե հիմա հեռանաք, սկանավորումը կչեղարկվի:",
+    "stayOnPage": "Մնալ էջում",
+    "leaveAnyway": "Հեռանալ",
+    "errorEmptyUrl": "Խնդրում ենք մուտքագրել թիրախային URL",
+    "errorInvalidProtocol": "URL-ը պետք է սկսվի http:// կամ https://-ով",
+    "errorInvalidUrl": "URL-ի անվավեր ձևաչափ",
+    "errorNoScanners": "Խնդրում ենք ընտրել առնվազն մեկ սկաներ",
+    "errorCreate": "Չհաջողվեց ստեղծել սկան",
     "cancel": "Չեղարկել",
     "startScan": "Սկսել սկանավորումը",
+    "scanning": "Սկանավորում",
     "creating": "Սկան ստեղծվում է...",
     "backToDashboard": "Վերադառնալ վահանակ"
   },
@@ -48,6 +71,7 @@
     "duration": "Սկանի տևողությունը",
     "created": "Ստեղծման ամսաթիվ",
     "actions": "Գործողություններ",
+    "view": "Դիտել",
     "noScans": "Սկաններ դեռ չկան",
     "createFirst": "Ստեղծեք ձեր առաջին սկանը",
     "loading": "Սկաններ բեռնվում են..."
@@ -105,7 +129,9 @@
     "pwdMinLength": "Առնվազն 8 նիշ",
     "pwdUppercase": "Առնվազն մեկ մեծ տառ (A-Z)",
     "pwdNumber": "Առնվազն մեկ թիվ (0-9)",
-    "pwdSpecial": "Առնվազն մեկ հատուկ նիշ (!@#$%...)"
+    "pwdSpecial": "Առնվազն մեկ հատուկ նիշ (!@#$%...)",
+    "invalidFullName": "Անունը պետք է պարունակի առնվազն անուն և ազգանուն (միայն տառեր):",
+    "invalidEmail": "Խնդրում ենք մուտքագրել վավեր էլ. փոստի հասցե:"
   },
   "toast": {
     "scanCreated": "Սկանը հաջողությամբ ստեղծվեց!",
@@ -114,5 +140,16 @@
     "loginFailed": "Մուտքը ձախողվեց: Ստուգեք ձեր տվյալները:",
     "registerSuccess": "Գրանցումը հաջողվեց! Խնդրում ենք մուտք գործել:",
     "registerFailed": "Գրանցումը ձախողվեց: Խնդրում ենք կրկին փորձել:"
+  },
+  "status": {
+    "pending": "Սպասվող",
+    "in_progress": "Ընթացքում",
+    "completed": "Ավարտված",
+    "failed": "Ձախողված"
+  },
+  "scanType": {
+    "full": "Ամբողջական",
+    "quick": "Արագ",
+    "custom": "Հարմարեցված"
   }
 }
