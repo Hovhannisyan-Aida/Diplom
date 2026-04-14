@@ -6,6 +6,7 @@ from scanners.sql_injection import SQLInjectionScanner
 from scanners.xss_scanner import XSSScanner
 from scanners.security_headers import SecurityHeadersScanner
 from scanners.crypto_scanner import CryptoScanner
+from scanners.csrf_scanner import CSRFScanner
 from datetime import datetime
 import logging
 

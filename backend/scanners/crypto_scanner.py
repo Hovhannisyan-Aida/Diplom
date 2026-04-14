@@ -2,8 +2,8 @@ from typing import List, Dict, Any
 from scanners.base_scanner import BaseScanner
 import ssl
 import socket
-from urllib.parse import urlparse
-from datetime import datetime
+from urllib.parse import urlparse, parse_qs
+from datetime import datetime, timezone
 import hashlib
 import re
 import logging
@@ -25,10 +25,19 @@ class CryptoScanner(BaseScanner):
             self.add_vulnerability({
                 "vuln_type": "cryptographic_failure",
                 "severity": "high",
-                "title": "HTTP Used Instead of HTTPS",
-                "description": f"The website {self.target_url} is not using HTTPS. All data transmitted is unencrypted and vulnerable to interception.",
+                "title": self.t(
+                    "HTTP Used Instead of HTTPS",
+                    "Օգտագործվում է HTTP HTTPS-ի փոխարեն"
+                ),
+                "description": self.t(
+                    f"The website {self.target_url} is not using HTTPS. All data transmitted is unencrypted and vulnerable to interception.",
+                    f"{self.target_url} կայքը չի օգտագործում HTTPS։ Բոլոր փոխանցված տվյալները չգաղտնագրված են և խոցելի են գաղտնալսման համար։"
+                ),
                 "url": self.target_url,
-                "recommendation": "Enable HTTPS with a valid SSL/TLS certificate. Redirect all HTTP traffic to HTTPS.",
+                "recommendation": self.t(
+                    "Enable HTTPS with a valid SSL/TLS certificate. Redirect all HTTP traffic to HTTPS.",
+                    "Ակտիվացրեք HTTPS-ը վավեր SSL/TLS սերտիֆիկատով։ Վերահղեք բոլոր HTTP տրաֆիկը HTTPS-ի։"
+                ),
                 "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
             })
 
@@ -41,10 +50,19 @@ class CryptoScanner(BaseScanner):
                     self.add_vulnerability({
                         "vuln_type": "cryptographic_failure",
                         "severity": "medium",
-                        "title": "No HTTP to HTTPS Redirect",
-                        "description": "The server does not redirect HTTP traffic to HTTPS, allowing users to browse insecurely.",
+                        "title": self.t(
+                            "No HTTP to HTTPS Redirect",
+                            "HTTP-ից HTTPS վերահղում չկա"
+                        ),
+                        "description": self.t(
+                            "The server does not redirect HTTP traffic to HTTPS, allowing users to browse insecurely.",
+                            "Սերվերը HTTP տրաֆիկը HTTPS-ի չի վերահղում, ինչը թույլ է տալիս օգտատերերին անապահով կերպով դիտել կայքը։"
+                        ),
                         "url": self.target_url,
-                        "recommendation": "Configure the server to redirect all HTTP requests to HTTPS (301 redirect).",
+                        "recommendation": self.t(
+                            "Configure the server to redirect all HTTP requests to HTTPS (301 redirect).",
+                            "Կարգավորեք սերվերը բոլոր HTTP հարցումները HTTPS-ի վերահղելու համար (301 redirect)։"
+                        ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                     })
 
@@ -63,10 +81,19 @@ class CryptoScanner(BaseScanner):
                             self.add_vulnerability({
                                 "vuln_type": "cryptographic_failure",
                                 "severity": "high",
-                                "title": f"Weak TLS Version: {version}",
-                                "description": f"The server supports outdated TLS version {version}, which has known vulnerabilities.",
+                                "title": self.t(
+                                    f"Weak TLS Version: {version}",
+                                    f"Թույլ TLS տարբերակ՝ {version}"
+                                ),
+                                "description": self.t(
+                                    f"The server supports outdated TLS version {version}, which has known vulnerabilities.",
+                                    f"Սերվերն աջակցում է հնացած TLS {version} տարբերակին, որն ունի հայտնի խոցելիություններ։"
+                                ),
                                 "url": self.target_url,
-                                "recommendation": "Disable TLS 1.0, TLS 1.1, and all SSL versions. Use TLS 1.2 or TLS 1.3 only.",
+                                "recommendation": self.t(
+                                    "Disable TLS 1.0, TLS 1.1, and all SSL versions. Use TLS 1.2 or TLS 1.3 only.",
+                                    "Անջատեք TLS 1.0, TLS 1.1 և բոլոր SSL տարբերակները։ Օգտագործեք միայն TLS 1.2 կամ TLS 1.3։"
+                                ),
                                 "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                             })
 
@@ -75,10 +102,19 @@ class CryptoScanner(BaseScanner):
                             self.add_vulnerability({
                                 "vuln_type": "cryptographic_failure",
                                 "severity": "medium",
-                                "title": "Weak Cipher Suite",
-                                "description": f"The server supports weak cipher suite: {cipher[0]}",
+                                "title": self.t(
+                                    "Weak Cipher Suite",
+                                    "Թույլ Cipher Suite"
+                                ),
+                                "description": self.t(
+                                    f"The server supports weak cipher suite: {cipher[0]}",
+                                    f"Սերվերն աջակցում է թույլ cipher suite-ին՝ {cipher[0]}"
+                                ),
                                 "url": self.target_url,
-                                "recommendation": "Disable weak cipher suites. Use strong ciphers like AES-GCM.",
+                                "recommendation": self.t(
+                                    "Disable weak cipher suites. Use strong ciphers like AES-GCM.",
+                                    "Անջատեք թույլ cipher suite-ները։ Օգտագործեք ուժեղ cipher-ներ, ինչպիսիք են AES-GCM-ը։"
+                                ),
                                 "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                             })
 
@@ -87,26 +123,44 @@ class CryptoScanner(BaseScanner):
                             if expire_str:
                                 try:
                                     expire_date = datetime.strptime(expire_str, "%b %d %H:%M:%S %Y %Z")
-                                    days_left = (expire_date - datetime.utcnow()).days
+                                    days_left = (expire_date - datetime.now(timezone.utc).replace(tzinfo=None)).days
                                     print(f"Certificate expires in {days_left} days", flush=True)
                                     if days_left < 0:
                                         self.add_vulnerability({
                                             "vuln_type": "cryptographic_failure",
                                             "severity": "critical",
-                                            "title": "SSL Certificate Expired",
-                                            "description": f"The SSL certificate expired {abs(days_left)} days ago on {expire_date.strftime('%Y-%m-%d')}.",
+                                            "title": self.t(
+                                                "SSL Certificate Expired",
+                                                "SSL Սերտիֆիկատի Ժամկետը Լրացել Է"
+                                            ),
+                                            "description": self.t(
+                                                f"The SSL certificate expired {abs(days_left)} days ago on {expire_date.strftime('%Y-%m-%d')}.",
+                                                f"SSL սերտիֆիկատի ժամկետը լրացել է {abs(days_left)} օր առաջ՝ {expire_date.strftime('%Y-%m-%d')}-ին։"
+                                            ),
                                             "url": self.target_url,
-                                            "recommendation": "Renew the SSL certificate immediately.",
+                                            "recommendation": self.t(
+                                                "Renew the SSL certificate immediately.",
+                                                "Անհապաղ թարմացրեք SSL սերտիֆիկատը։"
+                                            ),
                                             "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                                         })
                                     elif days_left < 30:
                                         self.add_vulnerability({
                                             "vuln_type": "cryptographic_failure",
                                             "severity": "medium",
-                                            "title": "SSL Certificate Expiring Soon",
-                                            "description": f"The SSL certificate expires in {days_left} days on {expire_date.strftime('%Y-%m-%d')}.",
+                                            "title": self.t(
+                                                "SSL Certificate Expiring Soon",
+                                                "SSL Սերտիֆիկատի Ժամկետը Շուտ Կլրանա"
+                                            ),
+                                            "description": self.t(
+                                                f"The SSL certificate expires in {days_left} days on {expire_date.strftime('%Y-%m-%d')}.",
+                                                f"SSL սերտիֆիկատի ժամկետը կլրանա {days_left} օրից՝ {expire_date.strftime('%Y-%m-%d')}-ին։"
+                                            ),
                                             "url": self.target_url,
-                                            "recommendation": "Renew the SSL certificate before it expires.",
+                                            "recommendation": self.t(
+                                                "Renew the SSL certificate before it expires.",
+                                                "Թարմացրեք SSL սերտիֆիկատը մինչ ժամկետի լրանալը։"
+                                            ),
                                             "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                                         })
                                 except Exception as e:
@@ -118,62 +172,117 @@ class CryptoScanner(BaseScanner):
                     self.add_vulnerability({
                         "vuln_type": "cryptographic_failure",
                         "severity": "high",
-                        "title": "Self-Signed SSL Certificate",
-                        "description": "The server is using a self-signed certificate which is not trusted by browsers and vulnerable to MITM attacks.",
+                        "title": self.t(
+                            "Self-Signed SSL Certificate",
+                            "Ինքնստորագրված SSL Սերտիֆիկատ"
+                        ),
+                        "description": self.t(
+                            "The server is using a self-signed certificate which is not trusted by browsers and vulnerable to MITM attacks.",
+                            "Սերվերն օգտագործում է ինքնստորագրված սերտիֆիկատ, որը վստահելի չէ բրաուզերների համար և խոցելի է MITM հարձակումների նկատմամբ։"
+                        ),
                         "url": self.target_url,
-                        "recommendation": "Replace the self-signed certificate with one from a trusted Certificate Authority (e.g. Let's Encrypt).",
+                        "recommendation": self.t(
+                            "Replace the self-signed certificate with one from a trusted Certificate Authority (e.g. Let's Encrypt).",
+                            "Փոխարինեք ինքնստորագրված սերտիֆիկատը վստահված Certificate Authority-ի (օրինակ՝ Let's Encrypt) սերտիֆիկատով։"
+                        ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                     })
                 else:
                     self.add_vulnerability({
                         "vuln_type": "cryptographic_failure",
                         "severity": "critical",
-                        "title": "SSL/TLS Certificate Error",
-                        "description": f"SSL/TLS certificate validation failed: {str(e)}",
+                        "title": self.t(
+                            "SSL/TLS Certificate Error",
+                            "SSL/TLS Սերտիֆիկատի Սխալ"
+                        ),
+                        "description": self.t(
+                            f"SSL/TLS certificate validation failed: {str(e)}",
+                            f"SSL/TLS սերտիֆիկատի ստուգումն ձախողվեց՝ {str(e)}"
+                        ),
                         "url": self.target_url,
-                        "recommendation": "Install a valid SSL/TLS certificate from a trusted Certificate Authority.",
+                        "recommendation": self.t(
+                            "Install a valid SSL/TLS certificate from a trusted Certificate Authority.",
+                            "Տեղադրեք վավեր SSL/TLS սերտիֆիկատ վստահված Certificate Authority-ից։"
+                        ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                     })
             except ssl.SSLError as e:
                 self.add_vulnerability({
                     "vuln_type": "cryptographic_failure",
                     "severity": "critical",
-                    "title": "SSL/TLS Error",
-                    "description": f"SSL/TLS error: {str(e)}",
+                    "title": self.t(
+                        "SSL/TLS Error",
+                        "SSL/TLS Սխալ"
+                    ),
+                    "description": self.t(
+                        f"SSL/TLS error: {str(e)}",
+                        f"SSL/TLS սխալ՝ {str(e)}"
+                    ),
                     "url": self.target_url,
-                    "recommendation": "Review and fix the SSL/TLS configuration.",
+                    "recommendation": self.t(
+                        "Review and fix the SSL/TLS configuration.",
+                        "Ստուգեք և շտկեք SSL/TLS կարգավորումները։"
+                    ),
                     "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                 })
             except socket.timeout:
                 logger.warning(f"Timeout connecting to {hostname}:{port}")
-            except Exception as e:
-                logger.error(f"Crypto scan error: {str(e)}")
-
-        response = self.make_request(self.target_url)
-        if response:
-            hsts = response.headers.get("strict-transport-security", "")
-            if not hsts:
                 self.add_vulnerability({
                     "vuln_type": "cryptographic_failure",
                     "severity": "medium",
-                    "title": "Missing HSTS Header",
-                    "description": "HTTP Strict Transport Security (HSTS) header is not set. This allows potential downgrade attacks.",
+                    "title": self.t(
+                        "SSL/TLS Check Timed Out",
+                        "SSL/TLS Ստուգումը Ժամկետանց Եղավ"
+                    ),
+                    "description": self.t(
+                        f"Could not complete SSL/TLS analysis for {hostname}:{port} — connection timed out after 10 seconds. Certificate validity, TLS version, and cipher suite could not be verified.",
+                        f"Հնարավոր չեղավ կատարել SSL/TLS վերլուծություն {hostname}:{port}-ի համար — կապը ժամկետանց եղավ 10 վայրկյանից հետո։ Չհաջողվեց ստուգել սերտիֆիկատի վավերականությունը, TLS տարբերակը և cipher suite-ը։"
+                    ),
                     "url": self.target_url,
-                    "recommendation": "Add Strict-Transport-Security: max-age=31536000; includeSubDomains",
+                    "recommendation": self.t(
+                        "Ensure port 443 is reachable and the server responds to SSL/TLS handshakes promptly.",
+                        "Համոզվեք, որ 443 պորտը հասանելի է և սերվերը արագ արձագանքում է SSL/TLS handshake-ներին։"
+                    ),
                     "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                 })
-                print(f"HSTS header missing on {self.target_url}", flush=True)
-            else:
-                print(f"HSTS header present: {hsts}", flush=True)
+            except Exception as e:
+                logger.error(f"Crypto scan error: {str(e)}")
 
-        self._check_weak_hashing()
+        # HSTS check — only for HTTPS (fix #2). Response reused in _check_weak_hashing (fix #4).
+        https_response = None
+        if parsed_url.scheme == 'https':
+            https_response = self.make_request(self.target_url)
+            if https_response:
+                hsts = https_response.headers.get("strict-transport-security", "")
+                if not hsts:
+                    self.add_vulnerability({
+                        "vuln_type": "cryptographic_failure",
+                        "severity": "medium",
+                        "title": self.t(
+                            "Missing HSTS Header",
+                            "Բացակայում է HSTS Header"
+                        ),
+                        "description": self.t(
+                            "HTTP Strict Transport Security (HSTS) header is not set. This allows potential downgrade attacks.",
+                            "HTTP Strict Transport Security (HSTS) header-ը սահմանված չէ։ Սա թույլ է տալիս հնարավոր downgrade հարձակումներ։"
+                        ),
+                        "url": self.target_url,
+                        "recommendation": self.t(
+                            "Add Strict-Transport-Security: max-age=31536000; includeSubDomains",
+                            "Ավելացրեք Strict-Transport-Security: max-age=31536000; includeSubDomains"
+                        ),
+                        "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
+                    })
+                    print(f"HSTS header missing on {self.target_url}", flush=True)
+                else:
+                    print(f"HSTS header present: {hsts}", flush=True)
+
+        self._check_weak_hashing(response=https_response)
 
         print(f"Crypto scan finished, found {len(self.results)} vulnerabilities", flush=True)
         return self.get_results()
 
-    def _check_weak_hashing(self):
-        from urllib.parse import parse_qs, urlparse as _parse
-
+    def _check_weak_hashing(self, response=None):
         md5_pattern = re.compile(r'\b[a-f0-9]{32}\b', re.IGNORECASE)
         sha1_pattern = re.compile(r'\b[a-f0-9]{40}\b', re.IGNORECASE)
 
@@ -183,7 +292,7 @@ class CryptoScanner(BaseScanner):
             known_hashes[hashlib.md5(val.encode()).hexdigest()] = ("MD5", val)
             known_hashes[hashlib.sha1(val.encode()).hexdigest()] = ("SHA1", val)
 
-        parsed = _parse(self.target_url)
+        parsed = urlparse(self.target_url)
         url_params = parse_qs(parsed.query)
         for param, values in url_params.items():
             for val in values:
@@ -192,25 +301,44 @@ class CryptoScanner(BaseScanner):
                 if is_md5 or is_sha1:
                     algo = "MD5" if is_md5 else "SHA1"
                     known = known_hashes.get(val.strip().lower())
-                    description = (
-                        f"URL parameter '{param}' contains an unsalted {algo} hash of the value '{known[1]}' ({val}). "
-                        if known else
-                        f"URL parameter '{param}' contains a value matching a {algo} hash pattern ({val}). "
-                    )
-                    description += f"{algo} produces the same hash for the same input with no salt, making it vulnerable to rainbow table attacks."
+                    if known:
+                        desc_en = (
+                            f"URL parameter '{param}' contains an unsalted {algo} hash of the value '{known[1]}' ({val}). "
+                            f"{algo} produces the same hash for the same input with no salt, making it vulnerable to rainbow table attacks."
+                        )
+                        desc_hy = (
+                            f"URL parametr '{param}'-y parunakum e '{known[1]}' ({val}) arjeqi unsalted {algo} hash։ "
+                            f"{algo}-n nuyn input-i hamar misht talis e nuyn hash-y aranc salt-i, inchн ayn khoceli e rainbow table hardzakumneri nkatmamb։"
+                        )
+                    else:
+                        desc_en = (
+                            f"URL parameter '{param}' contains a value matching a {algo} hash pattern ({val}). "
+                            f"{algo} produces the same hash for the same input with no salt, making it vulnerable to rainbow table attacks."
+                        )
+                        desc_hy = (
+                            f"URL parametr '{param}'-y parunakum e {algo} hash-i dzevachafin hamapataskhanog arjeq ({val})։ "
+                            f"{algo}-n nuyn input-i hamar misht talis e nuyn hash-y, inchн ayn khoceli e rainbow table hardzakumneri nkatmamb։"
+                        )
                     print(f"Hash in URL param '{param}': {val} ({algo})", flush=True)
                     self.add_vulnerability({
                         "vuln_type": "cryptographic_failure",
                         "severity": "critical" if known else "high",
-                        "title": f"Weak Unsalted {algo} Hash in URL Parameter '{param}'",
-                        "description": description,
+                        "title": self.t(
+                            f"Weak Unsalted {algo} Hash in URL Parameter '{param}'",
+                            f"Thuyl Unsalted {algo} Hash URL Parametrum '{param}'"
+                        ),
+                        "description": self.t(desc_en, desc_hy),
                         "url": self.target_url,
-                        "recommendation": f"Never use {algo} for passwords. Use bcrypt, Argon2, or PBKDF2 with a unique salt.",
+                        "recommendation": self.t(
+                            f"Never use {algo} for passwords. Use bcrypt, Argon2, or PBKDF2 with a unique salt.",
+                            f"Bervek mi ogtagordzek {algo}-n gaghtnabarneri hamar։ Ogtagordzek bcrypt, Argon2 kam PBKDF2 ezaki salt-ov։"
+                        ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                     })
-                    return
 
-        response = self.make_request(self.target_url)
+        # Reuse response from scan() if available — avoids a duplicate HTTP request (fix #4)
+        if response is None:
+            response = self.make_request(self.target_url)
         if not response:
             return
 
@@ -227,15 +355,25 @@ class CryptoScanner(BaseScanner):
                 self.add_vulnerability({
                     "vuln_type": "cryptographic_failure",
                     "severity": "critical",
-                    "title": f"Unsalted {algo} Hash Detected in Response",
-                    "description": f"The response contains an unsalted {algo} hash of the value '{original}' ({h}). "
-                                   f"Unsalted {algo} hashes are vulnerable to rainbow table attacks — "
-                                   f"two identical passwords always produce the same hash.",
+                    "title": self.t(
+                        f"Unsalted {algo} Hash Detected in Response",
+                        f"Unsalted {algo} Hash Haytnabervel E Response-um"
+                    ),
+                    "description": self.t(
+                        f"The response contains an unsalted {algo} hash of the value '{original}' ({h}). "
+                        f"Unsalted {algo} hashes are vulnerable to rainbow table attacks — "
+                        f"two identical passwords always produce the same hash.",
+                        f"Response-y parunakum e '{original}' ({h}) arjeqi unsalted {algo} hash։ "
+                        f"Unsalted {algo} hash-ery khoceli en rainbow table hardzakumneri nkatmamb — "
+                        f"erku nuyn gaghtnabarn misht talis en nuyn hash-y։"
+                    ),
                     "url": self.target_url,
-                    "recommendation": f"Replace {algo} with bcrypt, Argon2, or PBKDF2 with a unique salt per password.",
+                    "recommendation": self.t(
+                        f"Replace {algo} with bcrypt, Argon2, or PBKDF2 with a unique salt per password.",
+                        f"Poxarinekh {algo}-n bcrypt-ov, Argon2-ov kam PBKDF2-ov yuraqanchyur gaghtnabari hamar ezaki salt-ov։"
+                    ),
                     "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                 })
-                return
 
         for cookie_name, cookie_value in cookies.items():
             for h in md5_pattern.findall(cookie_value) + sha1_pattern.findall(cookie_value):
@@ -245,36 +383,25 @@ class CryptoScanner(BaseScanner):
                     self.add_vulnerability({
                         "vuln_type": "cryptographic_failure",
                         "severity": "critical",
-                        "title": f"Unsalted {algo} Hash in Cookie '{cookie_name}'",
-                        "description": f"Cookie '{cookie_name}' contains an unsalted {algo} hash of '{original}'. "
-                                       f"This is vulnerable to rainbow table attacks.",
+                        "title": self.t(
+                            f"Unsalted {algo} Hash in Cookie '{cookie_name}'",
+                            f"Unsalted {algo} Hash '{cookie_name}' Cookie-um"
+                        ),
+                        "description": self.t(
+                            f"Cookie '{cookie_name}' contains an unsalted {algo} hash of '{original}'. "
+                            f"This is vulnerable to rainbow table attacks.",
+                            f"'{cookie_name}' cookie-n parunakum e '{original}'-i unsalted {algo} hash։ "
+                            f"Sa khoceli e rainbow table hardzakumneri nkatmamb։"
+                        ),
                         "url": self.target_url,
-                        "recommendation": f"Replace {algo} with bcrypt, Argon2, or PBKDF2 with a unique salt per password.",
+                        "recommendation": self.t(
+                            f"Replace {algo} with bcrypt, Argon2, or PBKDF2 with a unique salt per password.",
+                            f"Poxarinekh {algo}-n bcrypt-ov, Argon2-ov kam PBKDF2-ov yuraqanchyur gaghtnabari hamar ezaki salt-ov։"
+                        ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                     })
-                    return
 
         if found_md5:
-            print(f"Found {len(found_md5)} potential MD5 hashes in response body", flush=True)
-            self.add_vulnerability({
-                "vuln_type": "cryptographic_failure",
-                "severity": "medium",
-                "title": "Potential MD5 Hashes Exposed in Response",
-                "description": f"The response contains {len(found_md5)} value(s) matching MD5 hash pattern (32-char hex). "
-                               f"MD5 is a weak hashing algorithm — if used for passwords, it is vulnerable to rainbow table attacks because it produces the same hash for the same input with no salt.",
-                "url": self.target_url,
-                "recommendation": "Use bcrypt, Argon2, or PBKDF2 with a unique salt for password hashing. Never use MD5 or SHA1.",
-                "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
-            })
-        elif found_sha1:
-            print(f"Found {len(found_sha1)} potential SHA1 hashes in response body", flush=True)
-            self.add_vulnerability({
-                "vuln_type": "cryptographic_failure",
-                "severity": "medium",
-                "title": "Potential SHA1 Hashes Exposed in Response",
-                "description": f"The response contains {len(found_sha1)} value(s) matching SHA1 hash pattern (40-char hex). "
-                               f"SHA1 is a weak hashing algorithm — identical inputs always produce identical hashes with no salt, making it vulnerable to rainbow table attacks.",
-                "url": self.target_url,
-                "recommendation": "Use bcrypt, Argon2, or PBKDF2 with a unique salt for password hashing. Never use SHA1.",
-                "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
-            })
+            print(f"Found {len(found_md5)} potential MD5 hashes in response body (no known match)", flush=True)
+        if found_sha1:
+            print(f"Found {len(found_sha1)} potential SHA1 hashes in response body (no known match)", flush=True)

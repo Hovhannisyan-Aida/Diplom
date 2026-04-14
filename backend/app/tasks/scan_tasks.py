@@ -30,10 +30,13 @@ def run_vulnerability_scan(scan_id: int):
         target_url = scan.target_url
         all_vulnerabilities = []
 
+        custom_options = scan.custom_options or {}
+        language = custom_options.get('language', 'en')
+
         if scan.scan_type.value == "quick":
             logger.info(f"Running QUICK scan (Headers only) for scan {scan_id}")
 
-            headers_scanner = SecurityHeadersScanner(target_url)
+            headers_scanner = SecurityHeadersScanner(target_url, language=language)
             headers_vulns = headers_scanner.scan()
             if headers_vulns:
                 all_vulnerabilities.extend(headers_vulns)
@@ -42,32 +45,30 @@ def run_vulnerability_scan(scan_id: int):
         elif scan.scan_type.value == "custom":
             logger.info(f"Running CUSTOM scan for scan {scan_id}")
 
-            custom_options = scan.custom_options or {}
-
             if custom_options.get('sql_injection', False):
                 logger.info("Running SQL Injection scanner (custom)")
-                sql_scanner = SQLInjectionScanner(target_url)
+                sql_scanner = SQLInjectionScanner(target_url, language=language)
                 sql_vulns = sql_scanner.scan()
                 if sql_vulns:
                     all_vulnerabilities.extend(sql_vulns)
 
             if custom_options.get('xss', False):
                 logger.info("Running XSS scanner (custom)")
-                xss_scanner = XSSScanner(target_url)
+                xss_scanner = XSSScanner(target_url, language=language)
                 xss_vulns = xss_scanner.scan()
                 if xss_vulns:
                     all_vulnerabilities.extend(xss_vulns)
 
             if custom_options.get('security_headers', False):
                 logger.info("Running Security Headers scanner (custom)")
-                headers_scanner = SecurityHeadersScanner(target_url)
+                headers_scanner = SecurityHeadersScanner(target_url, language=language)
                 headers_vulns = headers_scanner.scan()
                 if headers_vulns:
                     all_vulnerabilities.extend(headers_vulns)
 
             if custom_options.get('crypto', False):
                 logger.info("Running Crypto scanner (custom)")
-                crypto_scanner = CryptoScanner(target_url)
+                crypto_scanner = CryptoScanner(target_url, language=language)
                 crypto_vulns = crypto_scanner.scan()
                 if crypto_vulns:
                     all_vulnerabilities.extend(crypto_vulns)
@@ -76,25 +77,25 @@ def run_vulnerability_scan(scan_id: int):
             logger.info(f"Running FULL scan for scan {scan_id}")
 
             logger.info("Running SQL Injection scanner (full)")
-            sql_scanner = SQLInjectionScanner(target_url)
+            sql_scanner = SQLInjectionScanner(target_url, language=language)
             sql_vulns = sql_scanner.scan()
             if sql_vulns:
                 all_vulnerabilities.extend(sql_vulns)
 
             logger.info("Running XSS scanner (full)")
-            xss_scanner = XSSScanner(target_url)
+            xss_scanner = XSSScanner(target_url, language=language)
             xss_vulns = xss_scanner.scan()
             if xss_vulns:
                 all_vulnerabilities.extend(xss_vulns)
 
             logger.info("Running Security Headers scanner (full)")
-            headers_scanner = SecurityHeadersScanner(target_url)
+            headers_scanner = SecurityHeadersScanner(target_url, language=language)
             headers_vulns = headers_scanner.scan()
             if headers_vulns:
                 all_vulnerabilities.extend(headers_vulns)
 
             logger.info("Running Crypto scanner (full)")
-            crypto_scanner = CryptoScanner(target_url)
+            crypto_scanner = CryptoScanner(target_url, language=language)
             crypto_vulns = crypto_scanner.scan()
             if crypto_vulns:
                 all_vulnerabilities.extend(crypto_vulns)
