@@ -6,6 +6,7 @@ from scanners.sql_injection import SQLInjectionScanner
 from scanners.xss_scanner import XSSScanner
 from scanners.security_headers import SecurityHeadersScanner
 from scanners.crypto_scanner import CryptoScanner
+from scanners.csrf_scanner import CSRFScanner
 from datetime import datetime
 import logging
 
@@ -29,21 +30,18 @@ def run_vulnerability_scan(scan_id: int):
 
         target_url = scan.target_url
         all_vulnerabilities = []
-
-        custom_options = scan.custom_options or {}
+        custom_options = dict(scan.custom_options) if scan.custom_options else {}
         language = custom_options.get('language', 'en')
 
         if scan.scan_type.value == "quick":
-            logger.info(f"Running QUICK scan (Headers only) for scan {scan_id}")
-
+            logger.info(f"Running QUICK scan for {target_url}")
             headers_scanner = SecurityHeadersScanner(target_url, language=language)
             headers_vulns = headers_scanner.scan()
             if headers_vulns:
                 all_vulnerabilities.extend(headers_vulns)
-                logger.info(f"Quick scan found {len(headers_vulns)} header vulnerabilities")
 
         elif scan.scan_type.value == "custom":
-            logger.info(f"Running CUSTOM scan for scan {scan_id}")
+            logger.info(f"Running CUSTOM scan for {target_url}")
 
             if custom_options.get('sql_injection', False):
                 logger.info("Running SQL Injection scanner (custom)")
@@ -73,44 +71,57 @@ def run_vulnerability_scan(scan_id: int):
                 if crypto_vulns:
                     all_vulnerabilities.extend(crypto_vulns)
 
-        else:
-            logger.info(f"Running FULL scan for scan {scan_id}")
+            if custom_options.get('csrf', False):
+                logger.info("Running CSRF scanner (custom)")
+                csrf_scanner = CSRFScanner(target_url, language=language)
+                csrf_vulns = csrf_scanner.scan()
+                if csrf_vulns:
+                    all_vulnerabilities.extend(csrf_vulns)
 
-            logger.info("Running SQL Injection scanner (full)")
+        else:
+            logger.info(f"Running FULL scan for {target_url}")
+
+            logger.info("Running SQL Injection scanner")
             sql_scanner = SQLInjectionScanner(target_url, language=language)
             sql_vulns = sql_scanner.scan()
+            logger.info(f"SQL found: {len(sql_vulns)}")
             if sql_vulns:
                 all_vulnerabilities.extend(sql_vulns)
 
-            logger.info("Running XSS scanner (full)")
+            logger.info("Running XSS scanner")
             xss_scanner = XSSScanner(target_url, language=language)
             xss_vulns = xss_scanner.scan()
+            logger.info(f"XSS found: {len(xss_vulns)}")
             if xss_vulns:
                 all_vulnerabilities.extend(xss_vulns)
 
-            logger.info("Running Security Headers scanner (full)")
+            logger.info("Running Security Headers scanner")
             headers_scanner = SecurityHeadersScanner(target_url, language=language)
             headers_vulns = headers_scanner.scan()
+            logger.info(f"Headers found: {len(headers_vulns)}")
             if headers_vulns:
                 all_vulnerabilities.extend(headers_vulns)
 
-            logger.info("Running Crypto scanner (full)")
+            logger.info("Running Crypto scanner")
             crypto_scanner = CryptoScanner(target_url, language=language)
             crypto_vulns = crypto_scanner.scan()
+            logger.info(f"Crypto found: {len(crypto_vulns)}")
             if crypto_vulns:
                 all_vulnerabilities.extend(crypto_vulns)
 
+            logger.info("Running CSRF scanner")
+            csrf_scanner = CSRFScanner(target_url, language=language)
+            csrf_vulns = csrf_scanner.scan()
+            logger.info(f"CSRF found: {len(csrf_vulns)}")
+            if csrf_vulns:
+                all_vulnerabilities.extend(csrf_vulns)
+
         for vuln_data in all_vulnerabilities:
-            crud_vulnerability.create_vulnerability(
-                db,
-                scan_id=scan_id,
-                vuln_data=vuln_data
-            )
+            crud_vulnerability.create_vulnerability(db, scan_id=scan_id, vuln_data=vuln_data)
 
         scan.status = ScanStatus.completed
         scan.completed_at = datetime.utcnow()
         scan.scan_duration = (scan.completed_at - scan.started_at).seconds
-
         scan.total_vulnerabilities = len(all_vulnerabilities)
         scan.critical_count = sum(1 for v in all_vulnerabilities if v.get('severity') == 'critical')
         scan.high_count = sum(1 for v in all_vulnerabilities if v.get('severity') == 'high')
@@ -118,7 +129,7 @@ def run_vulnerability_scan(scan_id: int):
         scan.low_count = sum(1 for v in all_vulnerabilities if v.get('severity') == 'low')
 
         db.commit()
-        logger.info(f"SCAN {scan_id} FINISHED - Type: {scan.scan_type.value}, Found {len(all_vulnerabilities)} vulnerabilities")
+        logger.info(f"SCAN {scan_id} FINISHED - Found {len(all_vulnerabilities)} vulnerabilities")
 
     except Exception as e:
         logger.error(f"Scan {scan_id} failed: {str(e)}")

@@ -36,6 +36,7 @@ class CryptoScanner(BaseScanner):
                 "url": self.target_url,
                 "recommendation": self.t(
                     "Enable HTTPS with a valid SSL/TLS certificate. Redirect all HTTP traffic to HTTPS.",
+                    "Включите HTTPS с действительным сертификатом SSL/TLS. Перенаправьте весь HTTP-трафик на HTTPS.",
                     "Ակտիվացրեք HTTPS-ը վավեր SSL/TLS սերտիֆիկատով։ Վերահղեք բոլոր HTTP տրաֆիկը HTTPS-ի։"
                 ),
                 "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -61,6 +62,7 @@ class CryptoScanner(BaseScanner):
                         "url": self.target_url,
                         "recommendation": self.t(
                             "Configure the server to redirect all HTTP requests to HTTPS (301 redirect).",
+                    "Настройте сервер для перенаправления всех HTTP-запросов на HTTPS (301 redirect).",
                             "Կարգավորեք սերվերը բոլոր HTTP հարցումները HTTPS-ի վերահղելու համար (301 redirect)։"
                         ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -92,6 +94,7 @@ class CryptoScanner(BaseScanner):
                                 "url": self.target_url,
                                 "recommendation": self.t(
                                     "Disable TLS 1.0, TLS 1.1, and all SSL versions. Use TLS 1.2 or TLS 1.3 only.",
+                        "Отключите TLS 1.0, TLS 1.1 и все версии SSL. Используйте только TLS 1.2 или TLS 1.3.",
                                     "Անջատեք TLS 1.0, TLS 1.1 և բոլոր SSL տարբերակները։ Օգտագործեք միայն TLS 1.2 կամ TLS 1.3։"
                                 ),
                                 "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -113,6 +116,7 @@ class CryptoScanner(BaseScanner):
                                 "url": self.target_url,
                                 "recommendation": self.t(
                                     "Disable weak cipher suites. Use strong ciphers like AES-GCM.",
+                        "Отключите слабые наборы шифров. Используйте надёжные алгоритмы, например AES-GCM.",
                                     "Անջատեք թույլ cipher suite-ները։ Օգտագործեք ուժեղ cipher-ներ, ինչպիսիք են AES-GCM-ը։"
                                 ),
                                 "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -140,6 +144,7 @@ class CryptoScanner(BaseScanner):
                                             "url": self.target_url,
                                             "recommendation": self.t(
                                                 "Renew the SSL certificate immediately.",
+                                "Немедленно обновите SSL-сертификат.",
                                                 "Անհապաղ թարմացրեք SSL սերտիֆիկատը։"
                                             ),
                                             "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -159,6 +164,7 @@ class CryptoScanner(BaseScanner):
                                             "url": self.target_url,
                                             "recommendation": self.t(
                                                 "Renew the SSL certificate before it expires.",
+                                "Обновите SSL-сертификат до истечения срока действия.",
                                                 "Թարմացրեք SSL սերտիֆիկատը մինչ ժամկետի լրանալը։"
                                             ),
                                             "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -183,6 +189,7 @@ class CryptoScanner(BaseScanner):
                         "url": self.target_url,
                         "recommendation": self.t(
                             "Replace the self-signed certificate with one from a trusted Certificate Authority (e.g. Let's Encrypt).",
+                    "Замените самоподписанный сертификат на сертификат от доверенного центра сертификации (например, Let's Encrypt).",
                             "Փոխարինեք ինքնստորագրված սերտիֆիկատը վստահված Certificate Authority-ի (օրինակ՝ Let's Encrypt) սերտիֆիկատով։"
                         ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -202,6 +209,7 @@ class CryptoScanner(BaseScanner):
                         "url": self.target_url,
                         "recommendation": self.t(
                             "Install a valid SSL/TLS certificate from a trusted Certificate Authority.",
+                    "Установите действительный SSL/TLS-сертификат от доверенного центра сертификации.",
                             "Տեղադրեք վավեր SSL/TLS սերտիֆիկատ վստահված Certificate Authority-ից։"
                         ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -221,6 +229,7 @@ class CryptoScanner(BaseScanner):
                     "url": self.target_url,
                     "recommendation": self.t(
                         "Review and fix the SSL/TLS configuration.",
+                    "Проверьте и исправьте конфигурацию SSL/TLS.",
                         "Ստուգեք և շտկեք SSL/TLS կարգավորումները։"
                     ),
                     "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -241,6 +250,7 @@ class CryptoScanner(BaseScanner):
                     "url": self.target_url,
                     "recommendation": self.t(
                         "Ensure port 443 is reachable and the server responds to SSL/TLS handshakes promptly.",
+                    "Убедитесь, что порт 443 доступен и сервер своевременно отвечает на SSL/TLS-рукопожатия.",
                         "Համոզվեք, որ 443 պորտը հասանելի է և սերվերը արագ արձագանքում է SSL/TLS handshake-ներին։"
                     ),
                     "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
@@ -269,6 +279,7 @@ class CryptoScanner(BaseScanner):
                         "url": self.target_url,
                         "recommendation": self.t(
                             "Add Strict-Transport-Security: max-age=31536000; includeSubDomains",
+                    "Добавьте Strict-Transport-Security: max-age=31536000; includeSubDomains",
                             "Ավելացրեք Strict-Transport-Security: max-age=31536000; includeSubDomains"
                         ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"

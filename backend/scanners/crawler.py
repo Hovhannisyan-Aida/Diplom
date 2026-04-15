@@ -1,9 +1,17 @@
 import requests
 from urllib.parse import urljoin, urlparse, parse_qs
 from typing import Set
+from bs4 import BeautifulSoup
 import logging
 
 logger = logging.getLogger(__name__)
+
+SKIP_EXTENSIONS = (
+    '.css', '.js', '.png', '.jpg', '.jpeg',
+    '.gif', '.ico', '.svg', '.woff', '.pdf',
+    '.zip', '.mp4', '.mp3',
+)
+
 
 class WebCrawler:
 
@@ -48,6 +56,26 @@ class WebCrawler:
 
             if 'text/html' not in response.headers.get('Content-Type', ''):
                 return
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            for a_tag in soup.find_all('a', href=True):
+                href = a_tag['href'].strip()
+
+                if href.startswith(('#', 'javascript:', 'mailto:', 'tel:')):
+                    continue
+
+                full_url = urljoin(url, href).split('#')[0]
+                parsed = urlparse(full_url)
+
+                if parsed.netloc != self.base_domain:
+                    continue
+
+                if any(parsed.path.lower().endswith(ext) for ext in SKIP_EXTENSIONS):
+                    continue
+
+                if full_url not in self.visited:
+                    self._crawl_page(full_url)
 
         except Exception as e:
             logger.warning(f"Error crawling {url}: {str(e)}")

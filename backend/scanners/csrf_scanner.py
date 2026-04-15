@@ -1,5 +1,6 @@
 import re
 import logging
+from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from scanners.base_scanner import BaseScanner
 
@@ -18,15 +19,26 @@ class CSRFScanner(BaseScanner):
         '_token', 'authenticity_token', '__requestverificationtoken',
         'xsrf', 'xsrf_token', '_csrf', '_csrf_token', 'anti_csrf',
         'nonce', 'form_token', 'security_token',
-        # NOTE: bare 'token' removed — too generic, causes false positives
     ]
+
+    SKIP_EXTENSIONS = (
+        '.css', '.js', '.png', '.jpg', '.jpeg',
+        '.gif', '.ico', '.svg', '.woff', '.pdf',
+        '.zip', '.mp4', '.mp3',
+    )
 
     def __init__(self, target_url: str, language: str = 'en'):
         super().__init__(target_url, language)
+        self._scanned_urls = set()
+
+    # ------------------------------------------------------------------ #
+    #  Main entry point                                                    #
+    # ------------------------------------------------------------------ #
 
     def scan(self):
         logger.info(f"Starting CSRF scan for {self.target_url}")
 
+        # Step 1 — load main page
         response = self.make_request(self.target_url)
         if response is None:
             logger.warning(f"No response from {self.target_url}")
@@ -38,23 +50,91 @@ class CSRFScanner(BaseScanner):
             logger.error(f"Failed to parse HTML: {e}")
             return self.vulnerabilities
 
-        self._check_forms(soup)
+        # Step 2 — cookies and headers checked once from main page
         self._check_cookies(response)
         self._check_csrf_headers(response)
+
+        # Step 3 — check forms on main page
+        self._check_forms(soup, self.target_url)
+        self._scanned_urls.add(self.target_url)
+
+        # Step 4 — collect subpage links and scan each for forms
+        subpages = self._collect_links(soup)
+        logger.info(f"Found {len(subpages)} subpages to scan for forms")
+
+        for page_url in subpages:
+            if page_url in self._scanned_urls:
+                continue
+
+            self._scanned_urls.add(page_url)
+            logger.info(f"Scanning subpage: {page_url}")
+
+            page_response = self.make_request(page_url)
+            if page_response is None:
+                continue
+
+            try:
+                page_soup = BeautifulSoup(page_response.text, 'html.parser')
+            except Exception:
+                continue
+
+            self._check_forms(page_soup, page_url)
 
         logger.info(f"CSRF scan finished, found {len(self.vulnerabilities)} vulnerabilities")
         return self.vulnerabilities
 
-    def _check_forms(self, soup):
+    # ------------------------------------------------------------------ #
+    #  Link collector                                                      #
+    # ------------------------------------------------------------------ #
+
+    def _collect_links(self, soup, max_pages: int = 10):
+        """
+        Find all internal links on the page.
+        Returns up to max_pages absolute URLs on the same domain.
+        """
+        base_domain = urlparse(self.target_url).netloc
+        links = set()
+
+        for a_tag in soup.find_all('a', href=True):
+            href = a_tag['href'].strip()
+
+            # Skip anchors, javascript, mailto, tel
+            if href.startswith(('#', 'javascript:', 'mailto:', 'tel:')):
+                continue
+
+            full_url = urljoin(self.target_url, href)
+            parsed = urlparse(full_url)
+
+            # Same domain only
+            if parsed.netloc != base_domain:
+                continue
+
+            # Skip static files
+            if any(parsed.path.lower().endswith(ext) for ext in self.SKIP_EXTENSIONS):
+                continue
+
+            # Remove URL fragment
+            clean_url = full_url.split('#')[0]
+            if clean_url and clean_url != self.target_url:
+                links.add(clean_url)
+
+        return sorted(links)[:max_pages]
+
+    # ------------------------------------------------------------------ #
+    #  Check 1 — Forms without CSRF tokens                                #
+    # ------------------------------------------------------------------ #
+
+    def _check_forms(self, soup, page_url: str):
+        """Check all POST forms on a given page for missing CSRF tokens."""
         forms = soup.find_all('form')
 
         if not forms:
-            logger.info("No forms found on page")
+            logger.info(f"No forms found on {page_url}")
             return
 
         for form in forms:
             method = form.get('method', 'get').lower()
-            action = form.get('action', self.target_url)
+            action = form.get('action', page_url)
 
             if method != 'post':
                 continue
@@ -81,15 +161,18 @@ class CSRFScanner(BaseScanner):
 
             if not has_csrf_token:
                 self.add_vulnerability({
+                    'vuln_type': 'csrf',
                     'title': self.t(
                         'Missing CSRF Token in Form',
                         'Ձևաթղթում CSRF Token բացակայում է'
                     ),
                     'severity': 'high',
                     'description': self.t(
-                        f'A POST form (action: "{action}") was found without a CSRF token. '
+                        f'A POST form (action: "{action}") was found on "{page_url}" '
+                        f'without a CSRF token. '
                         f'This allows attackers to forge requests on behalf of authenticated users.',
-                        f'POST ձևաթուղթ (action: "{action}") հայտնաբերվել է առանց CSRF token-ի։ '
+                        f'POST ձևաթուղթ (action: "{action}") հայտնաբերվել է "{page_url}" էջում '
+                        f'առանց CSRF token-ի։ '
                         f'Սա թույլ է տալիս հարձակվողներին կեղծ հարցումներ կատարել '
                         f'վավերացված օգտատիրոջ անունից։'
                     ),
@@ -97,72 +180,89 @@ class CSRFScanner(BaseScanner):
                         'Add a hidden CSRF token field to all POST forms. '
                         'Use a cryptographically random token (>=32 characters) '
                         'tied to the user session.',
+                        'Добавьте скрытое поле CSRF-токена во все POST-формы. '
+                        'Используйте криптографически случайный токен (>=32 символов), '
+                        'привязанный к сессии пользователя.',
                         'Ավելացրեք թաքնված CSRF token դաշտ բոլոր POST ձևաթղթերում։ '
                         'Օգտագործեք կրիպտոգրաֆիկ պատահական token (>=32 նիշ) '
                         'կապված օգտատիրոջ session-ի հետ։'
                     ),
-                    'url': self.target_url,
+                    'url': page_url,
                 })
 
             elif token_value is not None:
-                self._check_token_strength(token_value, action)
+                self._check_token_strength(token_value, action, page_url)
 
-    def _check_token_strength(self, token_value: str, action: str):
+    # ------------------------------------------------------------------ #
+    #  Check 2 — Token strength                                           #
+    # ------------------------------------------------------------------ #
+
+    def _check_token_strength(self, token_value: str, action: str, page_url: str):
         """Check if an existing CSRF token is strong enough."""
 
         if len(token_value) < 32:
             self.add_vulnerability({
+                'vuln_type': 'csrf',
                 'title': self.t(
                     'Weak CSRF Token — Too Short',
                     'Թույլ CSRF Token — Շատ Կարճ'
                 ),
                 'severity': 'medium',
                 'description': self.t(
-                    f'The CSRF token in form (action: "{action}") is only '
-                    f'{len(token_value)} characters long. '
+                    f'The CSRF token in form (action: "{action}") on "{page_url}" '
+                    f'is only {len(token_value)} characters long. '
                     f'Tokens shorter than 32 characters can be brute-forced.',
-                    f'CSRF token-ը ձևաթղթում (action: "{action}") ունի ընդամենը '
-                    f'{len(token_value)} նիշ։ '
+                    f'CSRF token-ը ձևաթղթում (action: "{action}") "{page_url}" էջում '
+                    f'ունի ընդամենը {len(token_value)} նիշ։ '
                     f'32 նիշից կարճ token-ները կարող են brute-force-ով կոտրվել։'
                 ),
                 'recommendation': self.t(
                     'Use a cryptographically secure random token of at least 32 characters.',
+                'Используйте криптографически стойкий случайный токен длиной не менее 32 символов.',
                     'Օգտագործեք կրիպտոգրաֆիկ անվտանգ պատահական token '
                     'առնվազն 32 նիշ երկարությամբ։'
                 ),
-                'url': self.target_url,
+                'url': page_url,
             })
             return
 
         predictable_patterns = [
-            r'^0+$',        
-            r'^1234',       
-            r'^abcd',       
-            r'^(.)\1{6,}$', 
+            r'^0+$',
+            r'^1234',
+            r'^abcd',
+            r'^(.)\1{6,}$',
         ]
 
         for pattern in predictable_patterns:
             if re.match(pattern, token_value, re.IGNORECASE):
                 self.add_vulnerability({
+                    'vuln_type': 'csrf',
                     'title': self.t(
                         'Weak CSRF Token — Predictable Value',
                         'Թույլ CSRF Token — Կանխատեսելի Արժեք'
                     ),
                     'severity': 'medium',
                     'description': self.t(
-                        f'The CSRF token "{token_value[:12]}..." follows a predictable pattern. '
+                        f'The CSRF token "{token_value[:12]}..." on "{page_url}" '
+                        f'follows a predictable pattern. '
                         f'Predictable tokens can be guessed by attackers.',
-                        f'CSRF token-ը "{token_value[:12]}..." հետևում է կանխատեսելի ձևի։ '
+                        f'CSRF token-ը "{token_value[:12]}..." "{page_url}" էջում '
+                        f'հետևում է կանխատեսելի ձևի։ '
                         f'Կանխատեսելի token-ները կարող են գուշակվել հարձակվողների կողմից։'
                     ),
                     'recommendation': self.t(
                         'Use secrets.token_hex(32) or os.urandom(32) to generate CSRF tokens.',
+                'Используйте secrets.token_hex(32) или os.urandom(32) для генерации CSRF-токенов.',
                         'Օգտագործեք secrets.token_hex(32) կամ os.urandom(32) '
                         'CSRF token-ներ ստեղծելու համար։'
                     ),
-                    'url': self.target_url,
+                    'url': page_url,
                 })
                 return
+
+    # ------------------------------------------------------------------ #
+    #  Check 3 — Cookie SameSite attribute                                #
+    # ------------------------------------------------------------------ #
 
     def _check_cookies(self, response):
         """Check cookies for missing SameSite and Secure attributes."""
@@ -184,6 +284,7 @@ class CSRFScanner(BaseScanner):
 
             if 'samesite' not in cookie_lower:
                 self.add_vulnerability({
+                    'vuln_type': 'csrf',
                     'title': self.t(
                         'Cookie Missing SameSite Attribute',
                         'Cookie-ին բացակայում է SameSite Attribute'
@@ -199,6 +300,7 @@ class CSRFScanner(BaseScanner):
                     ),
                     'recommendation': self.t(
                         'Add SameSite=Strict or SameSite=Lax to all session cookies.',
+                    'Добавьте SameSite=Strict или SameSite=Lax ко всем сессионным cookie.',
                         'Ավելացրեք SameSite=Strict կամ SameSite=Lax '
                         'բոլոր session cookie-ներին։'
                     ),
@@ -207,6 +309,7 @@ class CSRFScanner(BaseScanner):
 
             elif 'samesite=none' in cookie_lower and 'secure' not in cookie_lower:
                 self.add_vulnerability({
+                    'vuln_type': 'csrf',
                     'title': self.t(
                         'Cookie SameSite=None Without Secure Flag',
                         'Cookie SameSite=None-ը առանց Secure Flag-ի'
@@ -222,10 +325,15 @@ class CSRFScanner(BaseScanner):
                     ),
                     'recommendation': self.t(
                         'Add the Secure flag to all SameSite=None cookies.',
+                    'Добавьте флаг Secure ко всем cookie с SameSite=None.',
                         'Ավելացրեք Secure flag բոլոր SameSite=None cookie-ներին։'
                     ),
                     'url': self.target_url,
                 })
+
+    # ------------------------------------------------------------------ #
+    #  Check 4 — CSRF-related response headers                            #
+    # ------------------------------------------------------------------ #
 
     def _check_csrf_headers(self, response):
         """Check for CSRF-protective response headers."""
@@ -234,6 +342,7 @@ class CSRFScanner(BaseScanner):
 
         if 'x-frame-options' not in headers_lower:
             self.add_vulnerability({
+                'vuln_type': 'csrf',
                 'title': self.t(
                     'Missing X-Frame-Options Header',
                     'Բացակայում է X-Frame-Options Header'
@@ -249,6 +358,7 @@ class CSRFScanner(BaseScanner):
                 ),
                 'recommendation': self.t(
                     'Add X-Frame-Options: DENY or SAMEORIGIN header.',
+                'Добавьте заголовок X-Frame-Options: DENY или SAMEORIGIN.',
                     'Ավելացրեք X-Frame-Options: DENY կամ SAMEORIGIN header։'
                 ),
                 'url': self.target_url,
@@ -258,6 +368,7 @@ class CSRFScanner(BaseScanner):
 
         if cors_origin == '*':
             self.add_vulnerability({
+                'vuln_type': 'csrf',
                 'title': self.t(
                     'Wildcard CORS Policy — CSRF Risk',
                     'Wildcard CORS Քաղաքականություն — CSRF Ռիսկ'
@@ -275,6 +386,8 @@ class CSRFScanner(BaseScanner):
                 'recommendation': self.t(
                     'Restrict Access-Control-Allow-Origin to specific trusted domains. '
                     'Never use wildcard (*) for authenticated endpoints.',
+                    'Ограничьте Access-Control-Allow-Origin конкретными доверенными доменами. '
+                    'Никогда не используйте wildcard (*) для аутентифицированных эндпоинтов.',
                     'Սահմանափակեք Access-Control-Allow-Origin-ը վստահելի դոմեններով։ '
                     'Երբեք մի օգտագործեք wildcard (*) վավերացված endpoint-ների համար։'
                 ),

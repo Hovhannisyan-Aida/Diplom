@@ -41,12 +41,13 @@ function NewScan() {
     setShowLeaveWarning(false);
     if (pendingPath) navigate(pendingPath);
   };
-  
+
   const [customOptions, setCustomOptions] = useState({
     sql_injection: true,
     xss: true,
     security_headers: true,
-    crypto: true
+    crypto: true,
+    csrf: true,
   });
 
   const getScanFeatures = () => {
@@ -57,6 +58,7 @@ function NewScan() {
           t('newScan.xss'),
           t('newScan.securityHeaders'),
           t('newScan.cryptoFailures'),
+          t('newScan.csrfVulnerabilities'),
           t('newScan.commonVulnerabilities')
         ];
       case 'quick':
@@ -70,6 +72,7 @@ function NewScan() {
         if (customOptions.xss) features.push(t('newScan.xss'));
         if (customOptions.security_headers) features.push(t('newScan.securityHeaders'));
         if (customOptions.crypto) features.push(t('newScan.cryptoFailures'));
+        if (customOptions.csrf) features.push(t('newScan.csrfVulnerabilities'));
         return features.length > 0 ? features : [t('newScan.noScannersSelected')];
       default:
         return [];
@@ -271,6 +274,7 @@ function NewScan() {
                   </span>
                   <span className="scanner-description">{t('newScan.headersScannerDesc')}</span>
                 </label>
+
                 <label className="scanner-checkbox">
                   <input
                     type="checkbox"
@@ -282,6 +286,19 @@ function NewScan() {
                     {t('newScan.cryptoScanner')}
                   </span>
                   <span className="scanner-description">{t('newScan.cryptoScannerDesc')}</span>
+                </label>
+
+                <label className="scanner-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={customOptions.csrf}
+                    onChange={() => handleCustomOptionChange('csrf')}
+                    disabled={loading}
+                  />
+                  <span className="checkbox-label">
+                    {t('newScan.csrfScanner')}
+                  </span>
+                  <span className="scanner-description">{t('newScan.csrfScannerDesc')}</span>
                 </label>
               </div>
             </div>

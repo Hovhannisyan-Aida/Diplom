@@ -18,8 +18,12 @@ class BaseScanner:
         self.vulnerabilities = []
         self.language = language
 
-    def t(self, en: str, hy: str) -> str:
-        return hy if self.language == 'hy' else en
+    def t(self, en: str, hy: str, ru: str = None) -> str:
+        if self.language == 'hy':
+            return hy
+        if self.language == 'ru' and ru is not None:
+            return ru
+        return en
 
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
