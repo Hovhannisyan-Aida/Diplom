@@ -13,5 +13,8 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_verified = Column(Boolean, default=False)
+    verification_token = Column(String(100), nullable=True)
+    verification_token_expires = Column(DateTime, nullable=True)
 
     scans = relationship("Scan", back_populates="user", cascade="all, delete-orphan")

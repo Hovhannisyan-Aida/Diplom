@@ -6,12 +6,19 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from sqlalchemy import text
 from app.core.config import settings
 from app.api.v1 import auth, scans, users, test
 from app.db.session import engine
 from app.db.base import Base
 
 Base.metadata.create_all(bind=engine)
+
+with engine.connect() as _conn:
+    _conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT TRUE"))
+    _conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(100)"))
+    _conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires TIMESTAMP"))
+    _conn.commit()
 
 limiter = Limiter(key_func=get_remote_address)
 

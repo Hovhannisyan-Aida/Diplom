@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { Shield } from 'lucide-react';
+import { Shield, Eye, EyeOff } from 'lucide-react';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import './Login.css';
 
@@ -17,6 +17,8 @@ function Register() {
   const [error, setError] = useState('');
   const [passwordErrors, setPasswordErrors] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [registered, setRegistered] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -58,13 +60,36 @@ function Register() {
     setLoading(true);
     try {
       await register(email, password, fullName);
-      navigate('/login');
+      setRegistered(true);
     } catch (err) {
       setError(err.response?.data?.detail || t('toast.registerFailed'));
     } finally {
       setLoading(false);
     }
   };
+
+  if (registered) {
+    return (
+      <div className="login-container">
+        <div className="login-box">
+          <LanguageSwitcher />
+          <div className="login-header">
+            <Shield size={48} className="logo-icon" />
+            <h1>{t('register.checkEmailTitle')}</h1>
+            <p>{t('register.checkEmailMsg', { email })}</p>
+          </div>
+          <div className="verify-notice">
+            <p>{t('register.checkEmailHint')}</p>
+          </div>
+          <div className="login-footer">
+            <p>
+              {t('register.haveAccount')} <Link to="/login">{t('register.signIn')}</Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-container">
@@ -108,14 +133,24 @@ function Register() {
 
           <div className="form-group">
             <label htmlFor="password">{t('register.password')}</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={handlePasswordChange}
-              placeholder="••••••••"
-              required
-            />
+            <div className="input-password-wrapper">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={handlePasswordChange}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                className="btn-toggle-password"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {passwordErrors.length > 0 && (
               <ul className="password-requirements">
                 {passwordErrors.map((err, i) => (

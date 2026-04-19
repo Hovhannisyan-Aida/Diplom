@@ -68,12 +68,20 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const deleteAccount = async () => {
+    await authAPI.deleteAccount();
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+  };
+
   const value = {
     user,
     loading,
     login,
     register,
     logout,
+    deleteAccount,
     isAuthenticated: !!user,
   };
 

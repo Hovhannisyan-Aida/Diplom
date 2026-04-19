@@ -14,7 +14,9 @@ function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const { user, logout } = useAuth();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const { user, logout, deleteAccount } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +38,16 @@ function Dashboard() {
     setShowLogoutModal(false);
     logout();
     navigate('/login');
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount();
+      navigate('/login');
+    } catch (err) {
+      setDeleteError(t('deleteAccount.error'));
+      setShowDeleteModal(false);
+    }
   };
 
   if (loading) {
@@ -81,14 +93,44 @@ function Dashboard() {
           <button onClick={() => setShowLogoutModal(true)} className="btn-logout">
             {t('nav.logout')}
           </button>
+          <button onClick={() => { setDeleteError(''); setShowDeleteModal(true); }} className="btn-delete-account">
+            {t('deleteAccount.button')}
+          </button>
         </div>
       </nav>
 
-      <LogoutModal 
+      <LogoutModal
         isOpen={showLogoutModal}
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutModal(false)}
       />
+
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+              </svg>
+            </div>
+            <h2>{t('deleteAccount.title')}</h2>
+            <p>{t('deleteAccount.message')}</p>
+            {deleteError && <p style={{ color: '#dc2626', fontSize: '14px', marginTop: '-16px' }}>{deleteError}</p>}
+            <div className="modal-actions">
+              <button onClick={() => setShowDeleteModal(false)} className="btn-cancel">
+                {t('deleteAccount.cancel')}
+              </button>
+              <button onClick={handleDeleteAccount} className="btn-confirm">
+                {t('deleteAccount.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="dashboard-content">
         <div className="dashboard-header">

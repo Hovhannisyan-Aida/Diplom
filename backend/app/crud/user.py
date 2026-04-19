@@ -1,3 +1,5 @@
+import secrets
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.models.user import User
@@ -10,12 +12,19 @@ def get_user(db: Session, user_id: int) -> Optional[User]:
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
+def get_user_by_verification_token(db: Session, token: str) -> Optional[User]:
+    return db.query(User).filter(User.verification_token == token).first()
+
 def create_user(db: Session, user: UserCreate) -> User:
     hashed_password = get_password_hash(user.password)
+    token = secrets.token_urlsafe(32)
     db_user = User(
         email=user.email,
         hashed_password=hashed_password,
-        full_name=user.full_name
+        full_name=user.full_name,
+        is_verified=False,
+        verification_token=token,
+        verification_token_expires=datetime.utcnow() + timedelta(hours=24),
     )
     db.add(db_user)
     db.commit()
@@ -29,3 +38,9 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     if not verify_password(password, user.hashed_password):
         return None
     return user
+
+def delete_user(db: Session, user_id: int) -> None:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        db.delete(user)
+        db.commit()

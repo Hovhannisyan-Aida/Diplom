@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { Shield } from 'lucide-react';
+import { Shield, Eye, EyeOff } from 'lucide-react';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import './Login.css';
 
@@ -12,8 +12,12 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const justVerified = new URLSearchParams(location.search).get('verified') === 'true';
+  const verifyError = new URLSearchParams(location.search).get('verify_error');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,6 +45,24 @@ function Login() {
           <p>{t('login.subtitle')}</p>
         </div>
 
+        {justVerified && (
+          <div className="success-message">
+            {t('login.verifiedSuccess')}
+          </div>
+        )}
+
+        {verifyError === 'expired' && (
+          <div className="error-message">
+            {t('login.verifyExpired')}
+          </div>
+        )}
+
+        {verifyError === 'invalid' && (
+          <div className="error-message">
+            {t('login.verifyInvalid')}
+          </div>
+        )}
+
         {error && (
           <div className="error-message">
             {error}
@@ -62,14 +84,24 @@ function Login() {
 
           <div className="form-group">
             <label htmlFor="password">{t('login.password')}</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
+            <div className="input-password-wrapper">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                className="btn-toggle-password"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="btn-primary" disabled={loading}>

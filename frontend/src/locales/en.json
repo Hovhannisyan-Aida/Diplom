@@ -120,7 +120,10 @@
     "signIn": "Sign In",
     "signingIn": "Signing in...",
     "noAccount": "Don't have an account?",
-    "signUp": "Sign up"
+    "signUp": "Sign up",
+    "verifiedSuccess": "Email verified successfully! You can now sign in.",
+    "verifyExpired": "This verification link has expired. Please register again to get a new one.",
+    "verifyInvalid": "This verification link is no longer valid. It may have already been used."
   },
   "register": {
     "title": "Create Account",
@@ -137,7 +140,10 @@
     "pwdNumber": "At least one number (0-9)",
     "pwdSpecial": "At least one special character (!@#$%...)",
     "invalidFullName": "Full name must contain at least first and last name (letters only).",
-    "invalidEmail": "Please enter a valid email address."
+    "invalidEmail": "Please enter a valid email address.",
+    "checkEmailTitle": "Check Your Email",
+    "checkEmailMsg": "We sent a verification link to {{email}}",
+    "checkEmailHint": "Click the link in the email to activate your account. Check your spam folder if you don't see it."
   },
   "toast": {
     "scanCreated": "Scan created successfully!",
@@ -146,6 +152,14 @@
     "loginFailed": "Login failed. Please check your credentials.",
     "registerSuccess": "Registration successful! Please login.",
     "registerFailed": "Registration failed. Please try again."
+  },
+  "deleteAccount": {
+    "button": "Delete Account",
+    "title": "Delete Account",
+    "message": "This will permanently delete your account and all your scan data. This action cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Yes, Delete My Account",
+    "error": "Failed to delete account. Please try again."
   },
   "status": {
     "pending": "Pending",

@@ -31,6 +31,7 @@ export const authAPI = {
   }),
   getCurrentUser: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
+  deleteAccount: () => api.delete('/users/me'),
 };
 
 export const scansAPI = {
