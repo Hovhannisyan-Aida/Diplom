@@ -7,6 +7,7 @@ from scanners.xss_scanner import XSSScanner
 from scanners.security_headers import SecurityHeadersScanner
 from scanners.crypto_scanner import CryptoScanner
 from scanners.csrf_scanner import CSRFScanner
+from scanners.logging_scanner import LoggingMonitoringScanner
 from datetime import datetime
 import logging
 
@@ -78,6 +79,13 @@ def run_vulnerability_scan(scan_id: int):
                 if csrf_vulns:
                     all_vulnerabilities.extend(csrf_vulns)
 
+            if custom_options.get('logging', False):
+                logger.info("Running Logging & Monitoring scanner (custom)")
+                logging_scanner = LoggingMonitoringScanner(target_url, language=language)
+                logging_vulns = logging_scanner.scan()
+                if logging_vulns:
+                    all_vulnerabilities.extend(logging_vulns)
+
         else:
             logger.info(f"Running FULL scan for {target_url}")
 
@@ -115,6 +123,13 @@ def run_vulnerability_scan(scan_id: int):
             logger.info(f"CSRF found: {len(csrf_vulns)}")
             if csrf_vulns:
                 all_vulnerabilities.extend(csrf_vulns)
+
+            logger.info("Running Logging & Monitoring scanner")
+            logging_scanner = LoggingMonitoringScanner(target_url, language=language)
+            logging_vulns = logging_scanner.scan()
+            logger.info(f"Logging found: {len(logging_vulns)}")
+            if logging_vulns:
+                all_vulnerabilities.extend(logging_vulns)
 
         for vuln_data in all_vulnerabilities:
             crud_vulnerability.create_vulnerability(db, scan_id=scan_id, vuln_data=vuln_data)

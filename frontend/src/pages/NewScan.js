@@ -48,6 +48,7 @@ function NewScan() {
     security_headers: true,
     crypto: true,
     csrf: true,
+    logging: true,
   });
 
   const getScanFeatures = () => {
@@ -59,6 +60,7 @@ function NewScan() {
           t('newScan.securityHeaders'),
           t('newScan.cryptoFailures'),
           t('newScan.csrfVulnerabilities'),
+          t('newScan.loggingMonitoringFailures'),
           t('newScan.commonVulnerabilities')
         ];
       case 'quick':
@@ -73,6 +75,7 @@ function NewScan() {
         if (customOptions.security_headers) features.push(t('newScan.securityHeaders'));
         if (customOptions.crypto) features.push(t('newScan.cryptoFailures'));
         if (customOptions.csrf) features.push(t('newScan.csrfVulnerabilities'));
+        if (customOptions.logging) features.push(t('newScan.loggingMonitoringFailures'));
         return features.length > 0 ? features : [t('newScan.noScannersSelected')];
       default:
         return [];
@@ -299,6 +302,19 @@ function NewScan() {
                     {t('newScan.csrfScanner')}
                   </span>
                   <span className="scanner-description">{t('newScan.csrfScannerDesc')}</span>
+                </label>
+
+                <label className="scanner-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={customOptions.logging}
+                    onChange={() => handleCustomOptionChange('logging')}
+                    disabled={loading}
+                  />
+                  <span className="checkbox-label">
+                    {t('newScan.loggingScanner')}
+                  </span>
+                  <span className="scanner-description">{t('newScan.loggingScannerDesc')}</span>
                 </label>
               </div>
             </div>

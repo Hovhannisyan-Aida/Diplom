@@ -143,7 +143,21 @@ def get_user_statistics(db: Session = Depends(get_db),
     if completed_with_duration:
         avg_duration = sum(s.scan_duration for s in completed_with_duration) / len(completed_with_duration)
 
-    recent_scans = sorted(scans, key=lambda x: x.created_at, reverse=True)[:5]
+    SEVERITY_PRIORITY = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+
+    def scan_priority(s):
+        if s.critical_count > 0:
+            return (0, -s.critical_count)
+        if s.high_count > 0:
+            return (1, -s.high_count)
+        if s.medium_count > 0:
+            return (2, -s.medium_count)
+        if s.low_count > 0:
+            return (3, -s.low_count)
+        return (4, 0)
+
+    completed = [s for s in scans if s.status == ScanStatus.completed]
+    recent_scans = sorted(completed, key=scan_priority)[:5]
 
     return {
         "total_scans": total_scans,
@@ -164,7 +178,11 @@ def get_user_statistics(db: Session = Depends(get_db),
                 "target_url": s.target_url,
                 "status": s.status.value,
                 "created_at": s.created_at.isoformat(),
-                "total_vulnerabilities": s.total_vulnerabilities
+                "total_vulnerabilities": s.total_vulnerabilities,
+                "critical_count": s.critical_count,
+                "high_count": s.high_count,
+                "medium_count": s.medium_count,
+                "low_count": s.low_count,
             }
             for s in recent_scans
         ]

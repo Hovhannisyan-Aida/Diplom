@@ -94,6 +94,11 @@ function ScanDetails() {
   const mediumCount = scan.medium_count || 0;
   const lowCount = scan.low_count || 0;
 
+  const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+  const sortedVulnerabilities = [...(scan.vulnerabilities || [])].sort(
+    (a, b) => (SEVERITY_ORDER[a.severity] ?? 5) - (SEVERITY_ORDER[b.severity] ?? 5)
+  );
+
   return (
     <div className="scan-details-page">
       <nav className="navbar">
@@ -200,9 +205,9 @@ function ScanDetails() {
 
         <div className="vulnerabilities-list">
           <h2>{t('scanDetails.vulnerabilitiesList')}</h2>
-          {scan.vulnerabilities && scan.vulnerabilities.length > 0 ? (
+          {sortedVulnerabilities.length > 0 ? (
             <div className="vulnerabilities">
-              {scan.vulnerabilities.map((vuln, index) => (
+              {sortedVulnerabilities.map((vuln, index) => (
                 <div key={index} className={`vulnerability-card severity-${vuln.severity}`}>
                   <div className="vuln-header">
                     <h3>{vuln.title}</h3>

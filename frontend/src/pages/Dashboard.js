@@ -210,9 +210,26 @@ function Dashboard() {
               <div className="scans-list">
                 {stats.recent_scans.map((scan) => (
                   <div key={scan.id} className="scan-item" onClick={() => navigate(`/scans/${scan.id}`)}>
-                    <div>
+                    <div className="scan-item-main">
                       <p className="scan-url">{scan.target_url}</p>
                       <p className="scan-date">{new Date(scan.created_at).toLocaleDateString()}</p>
+                      <div className="scan-severity-badges">
+                        {scan.critical_count > 0 && (
+                          <span className="sev-badge sev-critical">{scan.critical_count} {t('scanDetails.critical')}</span>
+                        )}
+                        {scan.high_count > 0 && (
+                          <span className="sev-badge sev-high">{scan.high_count} {t('scanDetails.high')}</span>
+                        )}
+                        {scan.medium_count > 0 && (
+                          <span className="sev-badge sev-medium">{scan.medium_count} {t('scanDetails.medium')}</span>
+                        )}
+                        {scan.low_count > 0 && (
+                          <span className="sev-badge sev-low">{scan.low_count} {t('scanDetails.low')}</span>
+                        )}
+                        {scan.total_vulnerabilities === 0 && (
+                          <span className="sev-badge sev-none">{t('dashboard.noData')}</span>
+                        )}
+                      </div>
                     </div>
                     <div className={`scan-badge ${scan.status}`}>
                       {t(`status.${scan.status}`)}
