@@ -11,6 +11,7 @@ from app.api.v1.auth import get_current_user
 from app.models.scan import ScanStatus
 from app.tasks.scan_tasks import run_vulnerability_scan
 from app.models.vulnerability import Vulnerability
+from app.core.validators import validate_no_ssrf
 
 router = APIRouter()
 
@@ -18,6 +19,7 @@ router = APIRouter()
 def create_scan(scan: ScanCreate,
                 db: Session = Depends(get_db),
                 current_user: UserInDB = Depends(get_current_user)):
+    validate_no_ssrf(scan.target_url)
     db_scan = crud_scan.create_scan(db=db, scan=scan, user_id=current_user.id)
 
     print(f"STARTING SCAN {db_scan.id}")

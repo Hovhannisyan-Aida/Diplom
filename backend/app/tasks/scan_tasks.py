@@ -135,7 +135,7 @@ def run_vulnerability_scan(scan_id: int):
         logger.error(f"Scan {scan_id} failed: {str(e)}")
         if scan is not None:
             scan.status = ScanStatus.failed
-            scan.error_message = str(e)
+            scan.error_message = "Scan failed due to an internal error."
             scan.completed_at = datetime.utcnow()
             db.commit()
 

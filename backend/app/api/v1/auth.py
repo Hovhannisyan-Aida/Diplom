@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.db.session import get_db
 from app.schemas.user import UserCreate, UserInDB, Token
 from app.crud import user as crud_user
@@ -10,6 +12,9 @@ from app.core.config import settings
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
+limiter = Limiter(key_func=get_remote_address)
+
+token_blacklist: set = set()
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -17,6 +22,9 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if token in token_blacklist:
+        raise credentials_exception
 
     payload = decode_access_token(token)
     if payload is None:
@@ -43,7 +51,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     return crud_user.create_user(db=db, user=user)
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = crud_user.authenticate_user(db, email=form_data.username, password=form_data.password)
     if not user:
         raise HTTPException(
@@ -57,6 +66,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/logout")
+def logout(token: str = Depends(oauth2_scheme)):
+    token_blacklist.add(token)
+    return {"message": "Successfully logged out"}
 
 @router.get("/me", response_model=UserInDB)
 def read_users_me(current_user: UserInDB = Depends(get_current_user)):

@@ -100,8 +100,8 @@ class SQLInjectionScanner(BaseScanner):
                             ),
                             "recommendation": self.t(
                                 "Use parameterized queries or prepared statements.",
-                            "Используйте параметризованные запросы или подготовленные выражения.",
-                                "Օգտագործեք parameterized queries կամ prepared statements։"
+                                "Օգտագործեք parameterized queries կամ prepared statements։",
+                            "Используйте параметризованные запросы или подготовленные выражения."
                             ),
                             "references": "https://owasp.org/www-community/attacks/SQL_Injection"
                         })
@@ -139,8 +139,8 @@ class SQLInjectionScanner(BaseScanner):
                             ),
                             "recommendation": self.t(
                                 "Use parameterized queries or prepared statements.",
-                            "Используйте параметризованные запросы или подготовленные выражения.",
-                                "Օգտագործեք parameterized queries կամ prepared statements։"
+                                "Օգտագործեք parameterized queries կամ prepared statements։",
+                            "Используйте параметризованные запросы или подготовленные выражения."
                             ),
                             "references": "https://owasp.org/www-community/attacks/SQL_Injection"
                         })
@@ -216,8 +216,8 @@ class SQLInjectionScanner(BaseScanner):
                             "evidence": f"Response length diff: {length_diff} bytes (normal: {normal_length}, payload: {len(resp.text) if resp else 0})",
                             "recommendation": self.t(
                                 "Use parameterized queries or prepared statements.",
-                            "Используйте параметризованные запросы или подготовленные выражения.",
-                                "Օգտագործեք parameterized queries կամ prepared statements։"
+                                "Օգտագործեք parameterized queries կամ prepared statements։",
+                            "Используйте параметризованные запросы или подготовленные выражения."
                             ),
                             "references": "https://owasp.org/www-community/attacks/SQL_Injection"
                         })

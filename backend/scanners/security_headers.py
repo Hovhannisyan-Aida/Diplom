@@ -51,10 +51,9 @@ class SecurityHeadersScanner(BaseScanner):
         response = self.make_request(self.target_url)
 
         if not response:
-            logger.warning(f"Failed to fetch {self.target_url}, using demo mode")
-            headers = {}
-        else:
-            headers = response.headers
+            logger.warning(f"Failed to fetch {self.target_url}, skipping security headers scan")
+            return self.get_results()
+        headers = response.headers
 
         for header_name, info in self.REQUIRED_HEADERS.items():
             if header_name not in headers:

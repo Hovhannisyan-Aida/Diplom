@@ -180,12 +180,12 @@ class CSRFScanner(BaseScanner):
                         'Add a hidden CSRF token field to all POST forms. '
                         'Use a cryptographically random token (>=32 characters) '
                         'tied to the user session.',
-                        'Добавьте скрытое поле CSRF-токена во все POST-формы. '
-                        'Используйте криптографически случайный токен (>=32 символов), '
-                        'привязанный к сессии пользователя.',
                         'Ավելացրեք թաքնված CSRF token դաշտ բոլոր POST ձևաթղթերում։ '
                         'Օգտագործեք կրիպտոգրաֆիկ պատահական token (>=32 նիշ) '
-                        'կապված օգտատիրոջ session-ի հետ։'
+                        'կապված օգտատիրոջ session-ի հետ։',
+                        'Добавьте скрытое поле CSRF-токена во все POST-формы. '
+                        'Используйте криптографически случайный токен (>=32 символов), '
+                        'привязанный к сессии пользователя.'
                     ),
                     'url': page_url,
                 })
@@ -218,9 +218,9 @@ class CSRFScanner(BaseScanner):
                 ),
                 'recommendation': self.t(
                     'Use a cryptographically secure random token of at least 32 characters.',
-                'Используйте криптографически стойкий случайный токен длиной не менее 32 символов.',
                     'Օգտագործեք կրիպտոգրաֆիկ անվտանգ պատահական token '
-                    'առնվազն 32 նիշ երկարությամբ։'
+                    'առնվազն 32 նիշ երկարությամբ։',
+                'Используйте криптографически стойкий случайный токен длиной не менее 32 символов.'
                 ),
                 'url': page_url,
             })
@@ -252,9 +252,9 @@ class CSRFScanner(BaseScanner):
                     ),
                     'recommendation': self.t(
                         'Use secrets.token_hex(32) or os.urandom(32) to generate CSRF tokens.',
-                'Используйте secrets.token_hex(32) или os.urandom(32) для генерации CSRF-токенов.',
                         'Օգտագործեք secrets.token_hex(32) կամ os.urandom(32) '
-                        'CSRF token-ներ ստեղծելու համար։'
+                        'CSRF token-ներ ստեղծելու համար։',
+                'Используйте secrets.token_hex(32) или os.urandom(32) для генерации CSRF-токенов.'
                     ),
                     'url': page_url,
                 })
@@ -300,9 +300,9 @@ class CSRFScanner(BaseScanner):
                     ),
                     'recommendation': self.t(
                         'Add SameSite=Strict or SameSite=Lax to all session cookies.',
-                    'Добавьте SameSite=Strict или SameSite=Lax ко всем сессионным cookie.',
                         'Ավելացրեք SameSite=Strict կամ SameSite=Lax '
-                        'բոլոր session cookie-ներին։'
+                        'բոլոր session cookie-ներին։',
+                    'Добавьте SameSite=Strict или SameSite=Lax ко всем сессионным cookie.'
                     ),
                     'url': self.target_url,
                 })
@@ -325,8 +325,8 @@ class CSRFScanner(BaseScanner):
                     ),
                     'recommendation': self.t(
                         'Add the Secure flag to all SameSite=None cookies.',
-                    'Добавьте флаг Secure ко всем cookie с SameSite=None.',
-                        'Ավելացրեք Secure flag բոլոր SameSite=None cookie-ներին։'
+                        'Ավելացրեք Secure flag բոլոր SameSite=None cookie-ներին։',
+                    'Добавьте флаг Secure ко всем cookie с SameSite=None.'
                     ),
                     'url': self.target_url,
                 })
@@ -340,29 +340,6 @@ class CSRFScanner(BaseScanner):
 
         headers_lower = {k.lower(): v for k, v in response.headers.items()}
 
-        if 'x-frame-options' not in headers_lower:
-            self.add_vulnerability({
-                'vuln_type': 'csrf',
-                'title': self.t(
-                    'Missing X-Frame-Options Header',
-                    'Բացակայում է X-Frame-Options Header'
-                ),
-                'severity': 'medium',
-                'description': self.t(
-                    'The X-Frame-Options header is missing. Without it, the page can be '
-                    'embedded in an iframe on a malicious site, enabling clickjacking '
-                    'attacks (CSRF via UI redressing).',
-                    'X-Frame-Options header-ը բացակայում է։ Առանց դրա, էջը կարող է '
-                    'ներառվել iframe-ում վնասաբեր կայքում, հնարավոր դարձնելով '
-                    'clickjacking հարձակումները։'
-                ),
-                'recommendation': self.t(
-                    'Add X-Frame-Options: DENY or SAMEORIGIN header.',
-                'Добавьте заголовок X-Frame-Options: DENY или SAMEORIGIN.',
-                    'Ավելացրեք X-Frame-Options: DENY կամ SAMEORIGIN header։'
-                ),
-                'url': self.target_url,
-            })
 
         cors_origin = headers_lower.get('access-control-allow-origin', '')
 
@@ -386,10 +363,10 @@ class CSRFScanner(BaseScanner):
                 'recommendation': self.t(
                     'Restrict Access-Control-Allow-Origin to specific trusted domains. '
                     'Never use wildcard (*) for authenticated endpoints.',
-                    'Ограничьте Access-Control-Allow-Origin конкретными доверенными доменами. '
-                    'Никогда не используйте wildcard (*) для аутентифицированных эндпоинтов.',
                     'Սահմանափակեք Access-Control-Allow-Origin-ը վստահելի դոմեններով։ '
-                    'Երբեք մի օգտագործեք wildcard (*) վավերացված endpoint-ների համար։'
+                    'Երբեք մի օգտագործեք wildcard (*) վավերացված endpoint-ների համար։',
+                    'Ограничьте Access-Control-Allow-Origin конкретными доверенными доменами. '
+                    'Никогда не используйте wildcard (*) для аутентифицированных эндпоинтов.'
                 ),
                 'url': self.target_url,
             })

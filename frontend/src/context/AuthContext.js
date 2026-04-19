@@ -57,7 +57,12 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch {
+      // proceed with local logout even if server call fails
+    }
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);

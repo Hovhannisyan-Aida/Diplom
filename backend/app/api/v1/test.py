@@ -1,10 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
+from app.schemas.user import UserInDB
+from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 
 @router.get("/sqli", response_class=PlainTextResponse)
-def vulnerable_sqli(id: str = "1"):
+def vulnerable_sqli(id: str = "1", current_user: UserInDB = Depends(get_current_user)):
     dangerous = ["'", '"', "--", ";", "OR", "AND", "UNION", "SELECT", "SLEEP", "WAITFOR"]
     is_injected = any(d.lower() in id.lower() for d in dangerous)
 

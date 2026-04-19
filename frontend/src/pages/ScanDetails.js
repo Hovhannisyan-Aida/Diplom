@@ -56,15 +56,21 @@ function ScanDetails() {
     }
   };
 
-  const handleExportJSON = () => {
+  const handleExportJSON = async () => {
     if (!scan) return;
-    const dataStr = JSON.stringify(scan, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `scan-${scan.id}-${new Date().toISOString()}.json`;
-    link.click();
+    try {
+      const response = await scansAPI.export(scan.id);
+      const dataStr = JSON.stringify(response.data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `scan-${scan.id}-${new Date().toISOString()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
   };
 
   if (loading) {
@@ -83,10 +89,10 @@ function ScanDetails() {
     );
   }
 
-  const criticalCount = scan.vulnerabilities?.filter(v => v.severity === 'critical').length || 0;
-  const highCount = scan.vulnerabilities?.filter(v => v.severity === 'high').length || 0;
-  const mediumCount = scan.vulnerabilities?.filter(v => v.severity === 'medium').length || 0;
-  const lowCount = scan.vulnerabilities?.filter(v => v.severity === 'low').length || 0;
+  const criticalCount = scan.critical_count || 0;
+  const highCount = scan.high_count || 0;
+  const mediumCount = scan.medium_count || 0;
+  const lowCount = scan.low_count || 0;
 
   return (
     <div className="scan-details-page">

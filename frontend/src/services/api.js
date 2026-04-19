@@ -30,6 +30,7 @@ export const authAPI = {
     },
   }),
   getCurrentUser: () => api.get('/auth/me'),
+  logout: () => api.post('/auth/logout'),
 };
 
 export const scansAPI = {
