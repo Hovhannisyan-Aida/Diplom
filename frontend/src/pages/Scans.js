@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { scansAPI } from '../services/api';
-import { Shield, Plus } from 'lucide-react';
+import { Shield, Plus, Trash2 } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import './Scans.css';
@@ -36,12 +36,25 @@ function Scans() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [scanToDelete, setScanToDelete] = useState(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     loadScans();
   }, []);
+
+  const confirmDelete = async () => {
+    if (!scanToDelete) return;
+    try {
+      await scansAPI.delete(scanToDelete.id);
+      setScans((prev) => prev.filter((s) => s.id !== scanToDelete.id));
+    } catch (error) {
+      console.error('Failed to delete scan:', error);
+    } finally {
+      setScanToDelete(null);
+    }
+  };
 
   const loadScans = async () => {
     try {
@@ -89,7 +102,7 @@ function Scans() {
         </div>
       </nav>
 
-      <LogoutModal 
+      <LogoutModal
         isOpen={showLogoutModal}
         onConfirm={() => {
           setShowLogoutModal(false);
@@ -98,6 +111,26 @@ function Scans() {
         }}
         onCancel={() => setShowLogoutModal(false)}
       />
+
+      {scanToDelete && (
+        <div className="modal-overlay" onClick={() => setScanToDelete(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon">
+              <Trash2 size={32} />
+            </div>
+            <h2>{t('scans.deleteTitle')}</h2>
+            <p>{t('scans.deleteMessage', { url: scanToDelete.target_url })}</p>
+            <div className="modal-actions">
+              <button onClick={() => setScanToDelete(null)} className="btn-cancel">
+                {t('scans.deleteCancel')}
+              </button>
+              <button onClick={confirmDelete} className="btn-confirm">
+                {t('scans.deleteConfirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="scans-content">
         <div className="scans-header">
@@ -187,12 +220,21 @@ function Scans() {
                         {formatDateTime(scan.created_at)}
                       </td>
                       <td>
-                        <button
-                          onClick={() => navigate(`/scans/${scan.id}`)}
-                          className="scans-btn-view"
-                        >
-                          {t('scans.view')}
-                        </button>
+                        <div className="scans-actions">
+                          <button
+                            onClick={() => navigate(`/scans/${scan.id}`)}
+                            className="scans-btn-view"
+                          >
+                            {t('scans.view')}
+                          </button>
+                          <button
+                            onClick={() => setScanToDelete(scan)}
+                            className="scans-btn-delete"
+                            title={t('scans.deleteTitle')}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

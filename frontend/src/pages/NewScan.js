@@ -3,16 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { scansAPI } from '../services/api';
+import { useScan } from '../context/ScanContext';
 import { Shield, Globe, AlertCircle, Check } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import ScanningLoader from '../components/ScanningLoader';
 import './NewScan.css';
 
 function NewScan() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { addActiveScan } = useScan();
   const [targetUrl, setTargetUrl] = useState('');
   const [scanType, setScanType] = useState('full');
   const [loading, setLoading] = useState(false);
@@ -131,7 +132,8 @@ function NewScan() {
       };
 
       const response = await scansAPI.create(scanData);
-      navigate(`/scans/${response.data.id}`);
+      addActiveScan({ id: response.data.id, target_url: targetUrl });
+      navigate('/scans');
     } catch (err) {
       setError(err.response?.data?.detail || t('newScan.errorCreate'));
     } finally {
@@ -141,7 +143,6 @@ function NewScan() {
 
   return (
     <div className="new-scan-page">
-      {loading && <ScanningLoader url={targetUrl} />}
       <nav className="navbar">
         <div className="navbar-brand">
           <Shield size={24} />

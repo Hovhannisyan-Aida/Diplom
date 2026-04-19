@@ -80,7 +80,11 @@
     "view": "View",
     "noScans": "No scans yet",
     "createFirst": "Create Your First Scan",
-    "loading": "Loading scans..."
+    "loading": "Loading scans...",
+    "deleteTitle": "Delete Scan",
+    "deleteMessage": "Are you sure you want to delete the scan for \"{{url}}\"? This cannot be undone.",
+    "deleteCancel": "Cancel",
+    "deleteConfirm": "Yes, Delete"
   },
   "scanDetails": {
     "title": "Scan Details",
@@ -152,6 +156,13 @@
     "loginFailed": "Login failed. Please check your credentials.",
     "registerSuccess": "Registration successful! Please login.",
     "registerFailed": "Registration failed. Please try again."
+  },
+  "scanBanner": {
+    "single": "Scanning {{url}}...",
+    "multiple": "{{count}} scans running...",
+    "view": "View",
+    "toastDone": "Scan of {{url}} completed — {{count}} vulnerabilities found",
+    "toastFailed": "Scan of {{url}} failed"
   },
   "deleteAccount": {
     "button": "Delete Account",

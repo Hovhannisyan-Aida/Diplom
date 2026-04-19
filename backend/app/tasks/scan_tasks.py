@@ -2,6 +2,7 @@ from app.crud import scan as crud_scan
 from app.crud import vulnerability as crud_vulnerability
 from app.models.scan import ScanStatus
 from app.db.session import SessionLocal
+from app.core.celery_app import celery_app
 from scanners.sql_injection import SQLInjectionScanner
 from scanners.xss_scanner import XSSScanner
 from scanners.security_headers import SecurityHeadersScanner
@@ -13,6 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+@celery_app.task(name='app.tasks.scan_tasks.run_vulnerability_scan')
 def run_vulnerability_scan(scan_id: int):
     db = SessionLocal()
     scan = None

@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { ScanProvider } from './context/ScanContext';
+import ScanBanner from './components/ScanBanner';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -35,6 +37,8 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
+          <ScanProvider>
+          <ScanBanner />
           <Routes>
             <Route path="/" element={<Navigate to="/login" />} />
             
@@ -92,6 +96,7 @@ function App() {
               }
             />
           </Routes>
+          </ScanProvider>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

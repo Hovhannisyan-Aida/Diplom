@@ -29,8 +29,18 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.getCurrentUser();
       setUser(response.data);
     } catch (error) {
-      console.error('Failed to load user:', error);
-      logout();
+      if (error.response?.status === 401) {
+        try {
+          const { data } = await authAPI.refresh();
+          localStorage.setItem('token', data.access_token);
+          const retried = await authAPI.getCurrentUser();
+          setUser(retried.data);
+        } catch {
+          logout();
+        }
+      } else {
+        logout();
+      }
     } finally {
       setLoading(false);
     }

@@ -21,13 +21,7 @@ def create_scan(scan: ScanCreate,
                 current_user: UserInDB = Depends(get_current_user)):
     validate_no_ssrf(scan.target_url)
     db_scan = crud_scan.create_scan(db=db, scan=scan, user_id=current_user.id)
-
-    print(f"STARTING SCAN {db_scan.id}")
-    run_vulnerability_scan(db_scan.id)
-    print(f"SCAN {db_scan.id} FINISHED")
-
-    db.refresh(db_scan)
-
+    run_vulnerability_scan.delay(db_scan.id)
     return db_scan
 
 @router.get("/", response_model=List[ScanInDB])
@@ -121,6 +115,17 @@ def export_scan_vulnerabilities(scan_id: int,
             "Content-Disposition": f"attachment; filename=scan_{scan_id}_vulnerabilities.json"
         }
     )
+
+@router.delete("/{scan_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_scan(scan_id: int,
+                db: Session = Depends(get_db),
+                current_user: UserInDB = Depends(get_current_user)):
+    scan = crud_scan.get_scan(db, scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    if scan.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    crud_scan.delete_scan(db, scan_id)
 
 @router.get("/statistics/summary")
 def get_user_statistics(db: Session = Depends(get_db),

@@ -22,6 +22,12 @@ def create_scan(db: Session, scan: ScanCreate, user_id: int):
     db.refresh(db_scan)
     return db_scan
 
+def delete_scan(db: Session, scan_id: int) -> None:
+    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if scan:
+        db.delete(scan)
+        db.commit()
+
 def update_scan_status(db: Session, scan_id: int, status: ScanStatus, error_message: str = None):
     scan = get_scan(db, scan_id)
     if scan:

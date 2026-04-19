@@ -6,7 +6,7 @@ from app.db.session import get_db
 from app.schemas.user import UserInDB
 from app.crud import user as crud_user
 from fastapi.security import OAuth2PasswordBearer
-from app.api.v1.auth import get_current_user, token_blacklist
+from app.api.v1.auth import get_current_user, _blacklist_token
 from app.core.config import settings
 
 _oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
@@ -30,5 +30,5 @@ def delete_own_account(
     current_user: UserInDB = Depends(get_current_user),
 ):
     crud_user.delete_user(db, user_id=current_user.id)
-    token_blacklist.add(token)
+    _blacklist_token(token)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
