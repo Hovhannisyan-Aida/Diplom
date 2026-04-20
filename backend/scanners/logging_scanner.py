@@ -6,32 +6,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class LoggingMonitoringScanner(BaseScanner):
 
     SENSITIVE_PATHS = [
-        # Admin panels
         '/admin', '/administrator', '/admin/login', '/admin/dashboard', '/admin/console',
-        # Debug endpoints
         '/debug', '/debug/vars', '/debug/pprof',
-        # Log files
         '/logs', '/log', '/error.log', '/access.log', '/application.log', '/debug.log',
-        # Source control / env files
         '/.git/config', '/.git/HEAD', '/.svn/entries', '/.env', '/.env.local',
-        # Spring Boot actuator
         '/actuator', '/actuator/env', '/actuator/logfile', '/actuator/trace',
         '/actuator/heapdump', '/actuator/mappings',
-        # Metrics / monitoring
         '/metrics', '/prometheus',
-        # PHP info
         '/phpinfo.php', '/info.php', '/test.php',
-        # Java consoles
         '/console', '/h2-console', '/manager/html',
-        # WordPress
         '/wp-admin/', '/wp-login.php',
-        # Apache status
         '/server-status', '/server-info',
-        # Trace
         '/trace',
     ]
 
@@ -57,7 +45,6 @@ class LoggingMonitoringScanner(BaseScanner):
         r'illuminate\\',
     ]
 
-    # Paths where even a 401/403 is a finding (proves the resource exists)
     CRITICAL_PATHS = {
         '/.git/config', '/.git/HEAD', '/.svn/entries',
         '/.env', '/.env.local',
@@ -172,7 +159,6 @@ class LoggingMonitoringScanner(BaseScanner):
         body = response.text
         body_lower = body.lower()
 
-        # <meta name="generator" content="WordPress 6.1">
         meta_match = re.search(r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']([^"\']+)["\']', body, re.IGNORECASE)
         if not meta_match:
             meta_match = re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']generator["\']', body, re.IGNORECASE)
@@ -206,7 +192,6 @@ class LoggingMonitoringScanner(BaseScanner):
                 'references': 'https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/'
             })
 
-        # Detect technology from common HTML signatures
         tech_signatures = {
             'wp-content': 'WordPress',
             'wp-includes': 'WordPress',
@@ -217,7 +202,6 @@ class LoggingMonitoringScanner(BaseScanner):
         }
         for signature, tech in tech_signatures.items():
             if signature in body_lower:
-                # Only report if not already found via meta tag
                 if not any(v.get('evidence', '').startswith('<meta') for v in self.results):
                     print(f"Technology signature found: {tech} ({signature})", flush=True)
                     self.add_vulnerability({

@@ -12,7 +12,6 @@ SKIP_EXTENSIONS = (
     '.zip', '.mp4', '.mp3',
 )
 
-
 class WebCrawler:
 
     def __init__(self, base_url: str, max_pages: int = 10):

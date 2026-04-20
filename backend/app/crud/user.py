@@ -1,5 +1,5 @@
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.models.user import User
@@ -24,7 +24,7 @@ def create_user(db: Session, user: UserCreate) -> User:
         full_name=user.full_name,
         is_verified=False,
         verification_token=token,
-        verification_token_expires=datetime.utcnow() + timedelta(hours=24),
+        verification_token_expires=datetime.now(timezone.utc) + timedelta(hours=24),
     )
     db.add(db_user)
     db.commit()

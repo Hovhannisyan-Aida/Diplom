@@ -71,7 +71,7 @@ class XSSScanner(BaseScanner):
                         ),
                         "references": "https://owasp.org/www-community/attacks/xss/"
                     })
-                    return
+                    break
 
     def _test_forms(self):
         response = self.make_request(self.target_url)
@@ -137,4 +137,4 @@ class XSSScanner(BaseScanner):
                             ),
                             "references": "https://owasp.org/www-community/attacks/xss/"
                         })
-                        return
+                        break

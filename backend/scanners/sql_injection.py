@@ -105,7 +105,7 @@ class SQLInjectionScanner(BaseScanner):
                             ),
                             "references": "https://owasp.org/www-community/attacks/SQL_Injection"
                         })
-                        return
+                        break
         else:
             common_params = ["id", "page", "user", "search", "q", "cat", "item"]
             for param in common_params:
@@ -144,8 +144,8 @@ class SQLInjectionScanner(BaseScanner):
                             ),
                             "references": "https://owasp.org/www-community/attacks/SQL_Injection"
                         })
-                        return
-    
+                        break
+
     def _test_forms(self):
         response = self.make_request(self.target_url)
         if not response:
@@ -221,8 +221,8 @@ class SQLInjectionScanner(BaseScanner):
                             ),
                             "references": "https://owasp.org/www-community/attacks/SQL_Injection"
                         })
-                        return
-    
+                        break
+
     def _detect_sql_error(self, response_text: str) -> bool:
         response_lower = response_text.lower()
         for signature in self.ERROR_SIGNATURES:

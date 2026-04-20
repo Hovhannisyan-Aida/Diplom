@@ -3,13 +3,12 @@ from scanners.base_scanner import BaseScanner
 import ssl
 import socket
 from urllib.parse import urlparse, parse_qs
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import re
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 class CryptoScanner(BaseScanner):
 
@@ -126,8 +125,8 @@ class CryptoScanner(BaseScanner):
                             expire_str = cert.get("notAfter", "")
                             if expire_str:
                                 try:
-                                    expire_date = datetime.strptime(expire_str.rsplit(' ', 1)[0], "%b %d %H:%M:%S %Y")
-                                    days_left = (expire_date - datetime.utcnow()).days
+                                    expire_date = datetime.strptime(expire_str.rsplit(' ', 1)[0], "%b %d %H:%M:%S %Y").replace(tzinfo=timezone.utc)
+                                    days_left = (expire_date - datetime.now(timezone.utc)).days
                                     print(f"Certificate expires in {days_left} days", flush=True)
                                     if days_left < 0:
                                         self.add_vulnerability({
@@ -258,7 +257,6 @@ class CryptoScanner(BaseScanner):
             except Exception as e:
                 logger.error(f"Crypto scan error: {str(e)}")
 
-        # HSTS check — only for HTTPS (fix #2). Response reused in _check_weak_hashing (fix #4).
         https_response = None
         if parsed_url.scheme == 'https':
             https_response = self.make_request(self.target_url)
@@ -347,7 +345,6 @@ class CryptoScanner(BaseScanner):
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                     })
 
-        # Reuse response from scan() if available — avoids a duplicate HTTP request (fix #4)
         if response is None:
             response = self.make_request(self.target_url)
         if not response:

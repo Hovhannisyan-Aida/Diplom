@@ -1,12 +1,14 @@
 import os
 from celery import Celery
 
-REDIS_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+_base = os.getenv('REDIS_URL', 'redis://redis:6379')
+BROKER_URL  = _base.rstrip('/0123456789') + '/0'
+BACKEND_URL = _base.rstrip('/0123456789') + '/1'
 
 celery_app = Celery(
     'scanner',
-    broker=REDIS_URL,
-    backend=REDIS_URL,
+    broker=BROKER_URL,
+    backend=BACKEND_URL,
     include=['app.tasks.scan_tasks'],
 )
 

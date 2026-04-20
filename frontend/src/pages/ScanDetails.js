@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useScan } from '../context/ScanContext';
 import { useTranslation } from 'react-i18next';
 import { scansAPI } from '../services/api';
 import { Shield, Download, ArrowLeft } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import ScanningLoader from '../components/ScanningLoader';
 import './ScanDetails.css';
+
+const POLLING_INTERVAL = 3000;
+const ACTIVE_STATUSES = ['pending', 'in_progress'];
 
 const formatDuration = (seconds) => {
   if (!seconds) return '-';
@@ -37,23 +42,57 @@ function ScanDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { addActiveScan } = useScan();
   const [scan, setScan] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [overlayDismissed, setOverlayDismissed] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const pollRef = useRef(null);
+
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
 
   useEffect(() => {
     loadScanDetails();
+    return () => stopPolling();
   }, [id]);
 
   const loadScanDetails = async () => {
     try {
       const response = await scansAPI.getById(id);
-      setScan(response.data);
+      const data = response.data;
+      setScan(data);
+
+      if (ACTIVE_STATUSES.includes(data.status)) {
+        if (!pollRef.current) {
+          pollRef.current = setInterval(async () => {
+            try {
+              const pollResponse = await scansAPI.getById(id);
+              const updated = pollResponse.data;
+              setScan(updated);
+              if (!ACTIVE_STATUSES.includes(updated.status)) {
+                stopPolling();
+              }
+            } catch {
+              stopPolling();
+            }
+          }, POLLING_INTERVAL);
+        }
+      }
     } catch (error) {
       console.error('Failed to load scan details:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRunInBackground = () => {
+    if (scan) addActiveScan({ id: scan.id, target_url: scan.target_url });
+    setOverlayDismissed(true);
   };
 
   const handleExportJSON = async () => {
@@ -101,6 +140,9 @@ function ScanDetails() {
 
   return (
     <div className="scan-details-page">
+      {scan && ACTIVE_STATUSES.includes(scan.status) && !overlayDismissed && (
+        <ScanningLoader url={scan.target_url} onBackground={handleRunInBackground} />
+      )}
       <nav className="navbar">
         <div className="navbar-brand">
           <Shield size={24} />

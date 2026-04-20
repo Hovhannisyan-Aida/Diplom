@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useScan } from '../context/ScanContext';
 import { useTranslation } from 'react-i18next';
 import { scansAPI } from '../services/api';
 import { Shield, Plus, Trash2 } from 'lucide-react';
@@ -38,11 +39,20 @@ function Scans() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [scanToDelete, setScanToDelete] = useState(null);
   const { logout } = useAuth();
+  const { activeScans } = useScan();
   const navigate = useNavigate();
+  const prevActiveLenRef = useRef(activeScans.length);
 
   useEffect(() => {
     loadScans();
   }, []);
+
+  useEffect(() => {
+    if (activeScans.length < prevActiveLenRef.current) {
+      loadScans();
+    }
+    prevActiveLenRef.current = activeScans.length;
+  }, [activeScans.length]);
 
   const confirmDelete = async () => {
     if (!scanToDelete) return;

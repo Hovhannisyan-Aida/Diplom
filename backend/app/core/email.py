@@ -6,7 +6,6 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-
 def send_verification_email(to_email: str, token: str):
     verification_url = (
         f"{settings.BACKEND_URL}/api/v1/auth/verify-email?token={token}"
@@ -71,25 +70,21 @@ def send_verification_email(to_email: str, token: str):
     </html>
     """
 
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'Verify your Vulnerability Scanner account'
-    msg['From'] = f"Vulnerability Scanner <{settings.SMTP_FROM}>"
-    msg['To'] = to_email
-    msg.attach(MIMEText(html, 'html'))
-
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        logger.warning(f"SMTP not configured. Verification URL: {verification_url}")
-        print(f"\n[EMAIL NOT SENT] Verification URL: {verification_url}\n", flush=True)
-        return
-
     try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15) as server:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "Verify your Vulnerability Scanner account"
+        msg["From"] = f"Vulnerability Scanner <{settings.SMTP_USER}>"
+        msg["To"] = to_email
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
             server.ehlo()
             server.starttls()
             server.ehlo()
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+            server.sendmail(settings.SMTP_USER, to_email, msg.as_string())
+
         logger.info(f"Verification email sent to {to_email}")
     except Exception as e:
         logger.error(f"Failed to send verification email to {to_email}: {e}")
-        print(f"\n[EMAIL FAILED] Verification URL: {verification_url}\n", flush=True)
+        logger.info(f"Verification URL (fallback): {verification_url}")

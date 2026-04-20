@@ -9,7 +9,7 @@ from scanners.security_headers import SecurityHeadersScanner
 from scanners.crypto_scanner import CryptoScanner
 from scanners.csrf_scanner import CSRFScanner
 from scanners.logging_scanner import LoggingMonitoringScanner
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def run_vulnerability_scan(scan_id: int):
             return
 
         scan.status = ScanStatus.in_progress
-        scan.started_at = datetime.utcnow()
+        scan.started_at = datetime.now(timezone.utc)
         db.commit()
 
         target_url = scan.target_url
@@ -137,8 +137,12 @@ def run_vulnerability_scan(scan_id: int):
             crud_vulnerability.create_vulnerability(db, scan_id=scan_id, vuln_data=vuln_data)
 
         scan.status = ScanStatus.completed
-        scan.completed_at = datetime.utcnow()
-        scan.scan_duration = (scan.completed_at - scan.started_at).seconds
+        scan.completed_at = datetime.now(timezone.utc)
+        if scan.started_at:
+            started = scan.started_at if scan.started_at.tzinfo else scan.started_at.replace(tzinfo=timezone.utc)
+            scan.scan_duration = int((scan.completed_at - started).total_seconds())
+        else:
+            scan.scan_duration = None
         scan.total_vulnerabilities = len(all_vulnerabilities)
         scan.critical_count = sum(1 for v in all_vulnerabilities if v.get('severity') == 'critical')
         scan.high_count = sum(1 for v in all_vulnerabilities if v.get('severity') == 'high')
@@ -152,8 +156,8 @@ def run_vulnerability_scan(scan_id: int):
         logger.error(f"Scan {scan_id} failed: {str(e)}")
         if scan is not None:
             scan.status = ScanStatus.failed
-            scan.error_message = "Scan failed due to an internal error."
-            scan.completed_at = datetime.utcnow()
+            scan.error_message = str(e)
+            scan.completed_at = datetime.now(timezone.utc)
             db.commit()
 
     finally:

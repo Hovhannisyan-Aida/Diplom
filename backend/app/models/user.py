@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from app.db.base import Base
 
 class User(Base):
@@ -12,9 +12,9 @@ class User(Base):
     full_name = Column(String)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String(100), nullable=True)
-    verification_token_expires = Column(DateTime, nullable=True)
+    verification_token_expires = Column(DateTime(timezone=True), nullable=True)
 
     scans = relationship("Scan", back_populates="user", cascade="all, delete-orphan")

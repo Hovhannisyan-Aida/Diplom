@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.scan import Scan, ScanStatus
 from app.schemas.scan import ScanCreate
-from datetime import datetime
+from datetime import datetime, timezone
 
 def get_scan(db: Session, scan_id: int):
     return db.query(Scan).filter(Scan.id == scan_id).first()
@@ -33,9 +33,9 @@ def update_scan_status(db: Session, scan_id: int, status: ScanStatus, error_mess
     if scan:
         scan.status = status
         if status == ScanStatus.in_progress:
-            scan.started_at = datetime.utcnow()
+            scan.started_at = datetime.now(timezone.utc)
         elif status in [ScanStatus.completed, ScanStatus.failed]:
-            scan.completed_at = datetime.utcnow()
+            scan.completed_at = datetime.now(timezone.utc)
         if error_message:
             scan.error_message = error_message
         db.commit()

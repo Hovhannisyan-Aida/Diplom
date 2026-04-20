@@ -2,7 +2,7 @@ from sqlalchemy import JSON, Column, Integer, String, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 
 class ScanStatus(enum.Enum):
     pending = "pending"
@@ -24,9 +24,9 @@ class Scan(Base):
     scan_type = Column(SQLEnum(ScanType), default=ScanType.full)
     status = Column(SQLEnum(ScanStatus), default=ScanStatus.pending)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    started_at = Column(DateTime, nullable=True)
-    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
 
     total_vulnerabilities = Column(Integer, default=0)
     critical_count = Column(Integer, default=0)

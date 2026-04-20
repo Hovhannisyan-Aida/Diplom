@@ -128,7 +128,7 @@
 
 .login-form {
   display: grid;
-  grid-template-columns: 1fr 1fr;  /* ← 2 columns */
+  grid-template-columns: 1fr 1fr;  
   gap: 24px;
   margin-top: 40px;
 }

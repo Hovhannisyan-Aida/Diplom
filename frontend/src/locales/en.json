@@ -63,6 +63,7 @@
     "cancel": "Cancel",
     "startScan": "Start Scan",
     "scanning": "Scanning",
+    "runInBackground": "Run in Background",
     "creating": "Creating Scan...",
     "backToDashboard": "Back to Dashboard"
   },

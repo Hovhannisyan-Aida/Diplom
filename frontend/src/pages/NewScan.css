@@ -104,7 +104,7 @@
   margin-top: 8px;
 }
 
-/* Enhanced Scan Type Select */
+
 .form-select {
   width: 100%;
   padding: 18px 24px;
@@ -152,7 +152,7 @@
   transform: translateY(-2px);
 }
 
-/* Dropdown Options - BEAUTIFUL STYLING */
+
 .form-select option {
   padding: 16px 24px;
   font-size: 16px;
@@ -177,7 +177,7 @@
   font-weight: 800;
 }
 
-/* Individual option colors */
+
 .form-select option[value="full"] {
   background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
   color: #2e7d32;
@@ -196,7 +196,7 @@
   font-weight: 700;
 }
 
-/* When option is selected - change select background */
+
 .form-select:has(option[value="full"]:checked) {
   border-color: #4caf50;
   background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e9 100%);
@@ -233,7 +233,7 @@
   transform: translateY(-2px);
 }
 
-/* Custom Scan Options - BEAUTIFUL DESIGN */
+
 .custom-scan-options {
   background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 100%);
   border: 3px solid #7c4dff;
@@ -355,7 +355,7 @@
               inset 0 0 0 1px rgba(124, 77, 255, 0.1);
 }
 
-/* Scan Info Box */
+
 .scan-info-box {
   background: linear-gradient(135deg, #e3f2fd 0%, #e8eaf6 100%);
   border: 3px solid #5e35b1;
@@ -428,7 +428,7 @@
   box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
-/* Error Message */
+
 .error-message {
   display: flex;
   align-items: center;
@@ -444,7 +444,7 @@
   box-shadow: 0 4px 12px rgba(198, 40, 40, 0.15);
 }
 
-/* Form Actions */
+
 .form-actions {
   display: flex;
   gap: 16px;
@@ -530,7 +530,7 @@
   }
 }
 
-/* ── Leave Warning Modal ── */
+
 .leave-warning-overlay {
   position: fixed;
   inset: 0;

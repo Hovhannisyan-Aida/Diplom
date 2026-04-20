@@ -6,13 +6,7 @@ from scanners.base_scanner import BaseScanner
 
 logger = logging.getLogger(__name__)
 
-
 class CSRFScanner(BaseScanner):
-    """
-    CSRF (Cross-Site Request Forgery) Scanner
-    Checks for missing or weak CSRF protections on web forms and cookies.
-    Bilingual: EN / HY
-    """
 
     CSRF_TOKEN_NAMES = [
         'csrf', 'csrf_token', 'csrftoken', 'csrfmiddlewaretoken',
@@ -31,14 +25,9 @@ class CSRFScanner(BaseScanner):
         super().__init__(target_url, language)
         self._scanned_urls = set()
 
-    # ------------------------------------------------------------------ #
-    #  Main entry point                                                    #
-    # ------------------------------------------------------------------ #
-
     def scan(self):
         logger.info(f"Starting CSRF scan for {self.target_url}")
 
-        # Step 1 — load main page
         response = self.make_request(self.target_url)
         if response is None:
             logger.warning(f"No response from {self.target_url}")
@@ -50,15 +39,12 @@ class CSRFScanner(BaseScanner):
             logger.error(f"Failed to parse HTML: {e}")
             return self.vulnerabilities
 
-        # Step 2 — cookies and headers checked once from main page
         self._check_cookies(response)
         self._check_csrf_headers(response)
 
-        # Step 3 — check forms on main page
         self._check_forms(soup, self.target_url)
         self._scanned_urls.add(self.target_url)
 
-        # Step 4 — collect subpage links and scan each for forms
         subpages = self._collect_links(soup)
         logger.info(f"Found {len(subpages)} subpages to scan for forms")
 
@@ -83,49 +69,32 @@ class CSRFScanner(BaseScanner):
         logger.info(f"CSRF scan finished, found {len(self.vulnerabilities)} vulnerabilities")
         return self.vulnerabilities
 
-    # ------------------------------------------------------------------ #
-    #  Link collector                                                      #
-    # ------------------------------------------------------------------ #
-
     def _collect_links(self, soup, max_pages: int = 10):
-        """
-        Find all internal links on the page.
-        Returns up to max_pages absolute URLs on the same domain.
-        """
         base_domain = urlparse(self.target_url).netloc
         links = set()
 
         for a_tag in soup.find_all('a', href=True):
             href = a_tag['href'].strip()
 
-            # Skip anchors, javascript, mailto, tel
             if href.startswith(('#', 'javascript:', 'mailto:', 'tel:')):
                 continue
 
             full_url = urljoin(self.target_url, href)
             parsed = urlparse(full_url)
 
-            # Same domain only
             if parsed.netloc != base_domain:
                 continue
 
-            # Skip static files
             if any(parsed.path.lower().endswith(ext) for ext in self.SKIP_EXTENSIONS):
                 continue
 
-            # Remove URL fragment
             clean_url = full_url.split('#')[0]
             if clean_url and clean_url != self.target_url:
                 links.add(clean_url)
 
         return sorted(links)[:max_pages]
 
-    # ------------------------------------------------------------------ #
-    #  Check 1 — Forms without CSRF tokens                                #
-    # ------------------------------------------------------------------ #
-
     def _check_forms(self, soup, page_url: str):
-        """Check all POST forms on a given page for missing CSRF tokens."""
         forms = soup.find_all('form')
 
         if not forms:
@@ -193,12 +162,7 @@ class CSRFScanner(BaseScanner):
             elif token_value is not None:
                 self._check_token_strength(token_value, action, page_url)
 
-    # ------------------------------------------------------------------ #
-    #  Check 2 — Token strength                                           #
-    # ------------------------------------------------------------------ #
-
     def _check_token_strength(self, token_value: str, action: str, page_url: str):
-        """Check if an existing CSRF token is strong enough."""
 
         if len(token_value) < 32:
             self.add_vulnerability({
@@ -260,12 +224,7 @@ class CSRFScanner(BaseScanner):
                 })
                 return
 
-    # ------------------------------------------------------------------ #
-    #  Check 3 — Cookie SameSite attribute                                #
-    # ------------------------------------------------------------------ #
-
     def _check_cookies(self, response):
-        """Check cookies for missing SameSite and Secure attributes."""
 
         set_cookie_headers = []
         try:
@@ -331,15 +290,9 @@ class CSRFScanner(BaseScanner):
                     'url': self.target_url,
                 })
 
-    # ------------------------------------------------------------------ #
-    #  Check 4 — CSRF-related response headers                            #
-    # ------------------------------------------------------------------ #
-
     def _check_csrf_headers(self, response):
-        """Check for CSRF-protective response headers."""
 
         headers_lower = {k.lower(): v for k, v in response.headers.items()}
-
 
         cors_origin = headers_lower.get('access-control-allow-origin', '')
 

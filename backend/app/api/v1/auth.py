@@ -1,5 +1,6 @@
 import os
-from datetime import datetime, timedelta
+import threading
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -52,7 +53,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 @router.post("/register", response_model=UserInDB, status_code=status.HTTP_201_CREATED)
-def register(user: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     db_user = crud_user.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(
@@ -60,7 +62,12 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
     new_user = crud_user.create_user(db=db, user=user)
-    send_verification_email(new_user.email, new_user.verification_token)
+    thread = threading.Thread(
+        target=send_verification_email,
+        args=(new_user.email, new_user.verification_token),
+        daemon=True,
+    )
+    thread.start()
     return new_user
 
 @router.post("/login", response_model=Token)
@@ -89,7 +96,7 @@ def login(request: Request, response: Response, form_data: OAuth2PasswordRequest
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=False,
+        secure=True,
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
         path="/api/v1/auth/refresh",
@@ -125,7 +132,7 @@ def refresh(response: Response, refresh_token: str = Cookie(default=None), db: S
         key="refresh_token",
         value=new_refresh_token,
         httponly=True,
-        secure=False,
+        secure=True,
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
         path="/api/v1/auth/refresh",
@@ -143,7 +150,10 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     user = crud_user.get_user_by_verification_token(db, token)
     if not user:
         return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?verify_error=invalid")
-    if user.verification_token_expires < datetime.utcnow():
+    expires = user.verification_token_expires
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires < datetime.now(timezone.utc):
         return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?verify_error=expired")
     user.is_verified = True
     user.verification_token = None
