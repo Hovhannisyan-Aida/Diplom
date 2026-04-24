@@ -29,7 +29,8 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.getCurrentUser();
       setUser(response.data);
     } catch (error) {
-      if (error.response?.status === 401) {
+      const status = error.response?.status;
+      if (status === 401) {
         try {
           const { data } = await authAPI.refresh();
           localStorage.setItem('token', data.access_token);
@@ -38,9 +39,10 @@ export const AuthProvider = ({ children }) => {
         } catch {
           logout();
         }
-      } else {
+      } else if (status === 403) {
         logout();
       }
+      // Network errors (no response) or server errors (5xx) do not log the user out
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Column, Integer, String, DateTime, ForeignKey, Enum as SQLEnum, Text
+from sqlalchemy import JSON, Column, Float, Integer, String, DateTime, ForeignKey, Enum as SQLEnum, Text
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 import enum
@@ -34,7 +34,7 @@ class Scan(Base):
     medium_count = Column(Integer, default=0)
     low_count = Column(Integer, default=0)
 
-    scan_duration = Column(Integer, nullable=True)
+    scan_duration = Column(Float, nullable=True)
     error_message = Column(Text, nullable=True)
     custom_options = Column(JSON, nullable=True)
 

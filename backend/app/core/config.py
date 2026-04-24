@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     SMTP_FROM: str = ""
     BACKEND_URL: str = "http://localhost:8000"
     FRONTEND_URL: str = "http://localhost:3000"
+    COOKIE_SECURE: bool = False
 
     class Config:
         env_file = ".env"

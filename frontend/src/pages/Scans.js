@@ -11,9 +11,10 @@ import './Scans.css';
 
 const formatDuration = (seconds) => {
   if (!seconds) return '-';
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const total = Math.round(seconds);
+  if (total < 60) return `${total}s`;
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 };
 
@@ -36,6 +37,7 @@ function Scans() {
   const { t } = useTranslation();
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [scanToDelete, setScanToDelete] = useState(null);
   const { logout } = useAuth();
@@ -67,6 +69,7 @@ function Scans() {
   };
 
   const loadScans = async () => {
+    setLoadError(false);
     try {
       const response = await scansAPI.getAll();
       const sorted = [...response.data].sort(
@@ -75,6 +78,7 @@ function Scans() {
       setScans(sorted);
     } catch (error) {
       console.error('Failed to load scans:', error);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -154,7 +158,14 @@ function Scans() {
           </button>
         </div>
 
-        {scans.length === 0 ? (
+        {loadError ? (
+          <div className="scans-no-data">
+            <p>{t('scans.loadError')}</p>
+            <button onClick={loadScans} className="scans-btn-primary">
+              {t('scans.retry')}
+            </button>
+          </div>
+        ) : scans.length === 0 ? (
           <div className="scans-no-data">
             <p>{t('scans.noScans')}</p>
             <button onClick={() => navigate('/new-scan')} className="scans-btn-primary">
@@ -201,23 +212,23 @@ function Scans() {
                         {scan.total_vulnerabilities > 0 ? (
                           <div className="scans-vuln-summary">
                             {scan.critical_count > 0 && (
-                              <span className="scans-vuln-count scans-vuln-critical">
-                                C: {scan.critical_count}
+                              <span className="scans-vuln-count scans-vuln-critical" title={t('scanDetails.critical')}>
+                                {t('scanDetails.critical')}: {scan.critical_count}
                               </span>
                             )}
                             {scan.high_count > 0 && (
-                              <span className="scans-vuln-count scans-vuln-high">
-                                H: {scan.high_count}
+                              <span className="scans-vuln-count scans-vuln-high" title={t('scanDetails.high')}>
+                                {t('scanDetails.high')}: {scan.high_count}
                               </span>
                             )}
                             {scan.medium_count > 0 && (
-                              <span className="scans-vuln-count scans-vuln-medium">
-                                M: {scan.medium_count}
+                              <span className="scans-vuln-count scans-vuln-medium" title={t('scanDetails.medium')}>
+                                {t('scanDetails.medium')}: {scan.medium_count}
                               </span>
                             )}
                             {scan.low_count > 0 && (
-                              <span className="scans-vuln-count scans-vuln-low">
-                                L: {scan.low_count}
+                              <span className="scans-vuln-count scans-vuln-low" title={t('scanDetails.low')}>
+                                {t('scanDetails.low')}: {scan.low_count}
                               </span>
                             )}
                           </div>

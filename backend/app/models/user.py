@@ -13,7 +13,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    is_verified = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=True)
     verification_token = Column(String(100), nullable=True)
     verification_token_expires = Column(DateTime(timezone=True), nullable=True)
 

@@ -15,9 +15,10 @@ const ACTIVE_STATUSES = ['pending', 'in_progress'];
 
 const formatDuration = (seconds) => {
   if (!seconds) return '-';
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const total = Math.round(seconds);
+  if (total < 60) return `${total}s`;
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 };
 

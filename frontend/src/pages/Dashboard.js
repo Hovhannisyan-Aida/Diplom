@@ -135,7 +135,7 @@ function Dashboard() {
       <div className="dashboard-content">
         <div className="dashboard-header">
           <h1>{t('dashboard.title')}</h1>
-          <p>{t('dashboard.welcome', { name: user?.full_name })}</p>
+          <p>{t('dashboard.welcome', { name: user?.full_name || user?.email || 'User' })}</p>
         </div>
 
         <div className="stats-grid">
@@ -175,7 +175,16 @@ function Dashboard() {
             </div>
             <div className="stat-info">
               <p className="stat-label">{t('dashboard.avgDuration')}</p>
-              <p className="stat-value">{stats?.average_scan_duration?.toFixed(1) || 0}s</p>
+              <p className="stat-value">{
+  (() => {
+    const total = Math.round(stats?.average_scan_duration || 0);
+    if (!total) return '0s';
+    if (total < 60) return `${total}s`;
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  })()
+}</p>
             </div>
           </div>
         </div>

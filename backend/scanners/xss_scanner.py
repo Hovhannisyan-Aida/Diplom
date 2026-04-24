@@ -119,7 +119,7 @@ class XSSScanner(BaseScanner):
                         "severity": "high",
                         "title": self.t(
                             f"Reflected XSS in parameter '{param}'",
-                            f"Reflected XSS խոcелilутyan '{param}' parametrum",
+                            f"Reflected XSS '{param}' parametrum",
                             f"Reflected XSS в параметре '{param}'"
                         ),
                         "description": self.t(

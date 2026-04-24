@@ -12,6 +12,7 @@ _BLOCKED_RANGES = [
     ipaddress.ip_network("0.0.0.0/8"),
     ipaddress.ip_network("::1/128"),
     ipaddress.ip_network("fc00::/7"),
+    ipaddress.ip_network("::ffff:0:0/96"),
 ]
 
 def validate_no_ssrf(url: str):

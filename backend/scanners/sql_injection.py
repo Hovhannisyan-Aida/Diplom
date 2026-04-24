@@ -8,27 +8,29 @@ import time
 logger = logging.getLogger(__name__)
 
 class SQLInjectionScanner(BaseScanner):
-    
-    PAYLOADS = [
+
+    ERROR_PAYLOADS = [
         "'",
         "''",
         "' OR '1'='1",
         "' OR 1=1--",
         "admin'--",
-        "' OR SLEEP(3)--",
-        "'; WAITFOR DELAY '0:0:3'--",
         "1' ORDER BY 1--",
         "1' ORDER BY 2--",
         "' AND 1=2--",
     ]
-    
+
+    TIME_PAYLOADS = [
+        "' OR SLEEP(4)--",
+        "'; WAITFOR DELAY '0:0:4'--",
+    ]
+
     ERROR_SIGNATURES = [
         "sql syntax",
         "mysql_fetch",
         "mysql_num_rows",
         "mysql_result",
         "mysql error",
-        "postgresql",
         "ora-01",
         "sqlite",
         "syntax error",
@@ -39,193 +41,209 @@ class SQLInjectionScanner(BaseScanner):
         "pg_query",
         "supplied argument is not a valid mysql",
         "expects parameter 1 to be resource",
-        "division by zero",
         "microsoft ole db provider for sql server",
         "odbc microsoft access",
         "jdbc",
         "sqlexception",
     ]
-    
+
     def scan(self) -> List[Dict[str, Any]]:
-        print(f"Starting SQL Injection scan for {self.target_url}", flush=True)
-        
+        logger.info(f"Starting SQL Injection scan for {self.target_url}")
+
         baseline_start = time.time()
-        self.make_request(self.target_url)
+        baseline_response = self.make_request(self.target_url)
         self.baseline_time = time.time() - baseline_start
-        self.threshold = self.baseline_time + 2.5
-        print(f"Baseline: {round(self.baseline_time, 2)}s, Threshold: {round(self.threshold, 2)}s", flush=True)
-        
+        self.time_threshold = self.baseline_time + 3.5
+        self._reported_params = set()
+        self._baseline_text = baseline_response.text.lower() if baseline_response else ""
+        logger.info(f"Baseline: {round(self.baseline_time, 2)}s, Time threshold: {round(self.time_threshold, 2)}s")
+
         self._test_url_parameters()
         self._test_forms()
-        print(f"SQL scan finished, found {len(self.results)} vulnerabilities", flush=True)
+        logger.info(f"SQL scan finished, found {len(self.results)} vulnerabilities")
         return self.get_results()
-    
+
     def _test_url_parameters(self):
         parsed = urlparse(self.target_url)
         params = parse_qs(parsed.query)
-        
+
         if params:
             for param in params:
-                for payload in self.PAYLOADS:
-                    new_params = params.copy()
-                    new_params[param] = [payload]
-                    new_query = urlencode(new_params, doseq=True)
-                    test_url = urlunparse(parsed._replace(query=new_query))
-                    
-                    start_time = time.time()
-                    response = self.make_request(test_url)
-                    elapsed = time.time() - start_time
-                    
-                    if response and (self._detect_sql_error(response.text) or elapsed > self.threshold):
-                        detection = 'Time-based' if elapsed > self.threshold else 'Error-based'
-                        print(f"SQL INJECTION FOUND in param {param}! elapsed={elapsed}", flush=True)
-                        self.add_vulnerability({
-                            "vuln_type": "sql_injection",
-                            "severity": "critical",
-                            "title": self.t(
-                                f"SQL Injection vulnerability in parameter '{param}'",
-                                f"SQL Injection խոցելիություն {param} պարամետրում"
-                            ),
-                            "description": self.t(
-                                f"SQL injection detected in '{param}' parameter. {detection} - {'response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error detected'}",
-                                f"SQL injection հայտնաբերված '{param}' պարամետրում։ {detection} - {'response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error հայտնաբերված'}"
-                            ),
-                            "url": test_url,
-                            "parameter": param,
-                            "method": "GET",
-                            "payload": payload,
-                            "evidence": self.t(
-                                f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature found in response'}",
-                                f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature հայտնաբերված response-ում'}"
-                            ),
-                            "recommendation": self.t(
-                                "Use parameterized queries or prepared statements.",
-                                "Օգտագործեք parameterized queries կամ prepared statements։",
-                            "Используйте параметризованные запросы или подготовленные выражения."
-                            ),
-                            "references": "https://owasp.org/www-community/attacks/SQL_Injection"
-                        })
-                        break
+                self._test_param_error_based(param, params, parsed)
+                if param not in self._reported_params:
+                    self._test_param_time_based(param, params, parsed)
         else:
             common_params = ["id", "page", "user", "search", "q", "cat", "item"]
             for param in common_params:
-                for payload in self.PAYLOADS:
-                    test_url = f"{self.target_url}?{param}={payload}"
-                    start_time = time.time()
-                    response = self.make_request(test_url)
-                    elapsed = time.time() - start_time
+                self._test_common_param(param)
 
-                    if response and (self._detect_sql_error(response.text) or elapsed > self.threshold):
-                        detection = 'Time-based' if elapsed > self.threshold else 'Error-based'
-                        print(f"SQL INJECTION FOUND in param {param}! elapsed={elapsed}", flush=True)
-                        self.add_vulnerability({
-                            "vuln_type": "sql_injection",
-                            "severity": "critical",
-                            "title": self.t(
-                                f"SQL Injection vulnerability in parameter '{param}'",
-                                f"SQL Injection խոցելիություն {param} պարամետրում"
-                            ),
-                            "description": self.t(
-                                f"SQL injection detected in '{param}' parameter. {detection} - {'response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error detected'}",
-                                f"SQL injection հայտնաբերված '{param}' պարամետրում։ {detection} - {'response time: ' + str(round(elapsed, 2)) + 's' if elapsed > self.threshold else 'SQL error հայտնաբերված'}"
-                            ),
-                            "url": test_url,
-                            "parameter": param,
-                            "method": "GET",
-                            "payload": payload,
-                            "evidence": self.t(
-                                f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature found in response'}",
-                                f"{'Response time: ' + str(round(elapsed, 2)) + 's (baseline: ' + str(round(self.baseline_time, 2)) + 's)' if elapsed > self.threshold else 'SQL error signature հայտնաբերված response-ում'}"
-                            ),
-                            "recommendation": self.t(
-                                "Use parameterized queries or prepared statements.",
-                                "Օգտագործեք parameterized queries կամ prepared statements։",
-                            "Используйте параметризованные запросы или подготовленные выражения."
-                            ),
-                            "references": "https://owasp.org/www-community/attacks/SQL_Injection"
-                        })
-                        break
+    def _test_param_error_based(self, param, params, parsed):
+        for payload in self.ERROR_PAYLOADS:
+            new_params = params.copy()
+            new_params[param] = [payload]
+            test_url = urlunparse(parsed._replace(query=urlencode(new_params, doseq=True)))
+            response = self.make_request(test_url)
+            if response and self._detect_sql_error(response.text):
+                logger.info(f"Error-based SQL Injection in URL param '{param}'")
+                self._reported_params.add(param)
+                self._report(
+                    param=param, method="GET", payload=payload, url=test_url,
+                    detection="Error-based", evidence="SQL error signature found in response"
+                )
+                return
+
+    def _test_param_time_based(self, param, params, parsed):
+        for payload in self.TIME_PAYLOADS:
+            new_params = params.copy()
+            new_params[param] = [payload]
+            test_url = urlunparse(parsed._replace(query=urlencode(new_params, doseq=True)))
+            start = time.time()
+            response = self.make_request(test_url)
+            elapsed = time.time() - start
+            if response and elapsed > self.time_threshold:
+                logger.info(f"Time-based SQL Injection in URL param '{param}' elapsed={elapsed:.2f}s")
+                self._reported_params.add(param)
+                self._report(
+                    param=param, method="GET", payload=payload, url=test_url,
+                    detection="Time-based",
+                    evidence=f"Response time: {round(elapsed, 2)}s (baseline: {round(self.baseline_time, 2)}s)"
+                )
+                return
+
+    def _test_common_param(self, param):
+        for payload in self.ERROR_PAYLOADS:
+            test_url = f"{self.target_url}?{param}={payload}"
+            response = self.make_request(test_url)
+            if response and self._detect_sql_error(response.text):
+                logger.info(f"Error-based SQL Injection in common param '{param}'")
+                self._reported_params.add(param)
+                self._report(
+                    param=param, method="GET", payload=payload, url=test_url,
+                    detection="Error-based", evidence="SQL error signature found in response"
+                )
+                return
+
+        for payload in self.TIME_PAYLOADS:
+            test_url = f"{self.target_url}?{param}={payload}"
+            start = time.time()
+            response = self.make_request(test_url)
+            elapsed = time.time() - start
+            if response and elapsed > self.time_threshold:
+                logger.info(f"Time-based SQL Injection in common param '{param}' elapsed={elapsed:.2f}s")
+                self._reported_params.add(param)
+                self._report(
+                    param=param, method="GET", payload=payload, url=test_url,
+                    detection="Time-based",
+                    evidence=f"Response time: {round(elapsed, 2)}s (baseline: {round(self.baseline_time, 2)}s)"
+                )
+                return
 
     def _test_forms(self):
         response = self.make_request(self.target_url)
         if not response:
-            print(f"No response from {self.target_url}", flush=True)
+            logger.warning(f"No response from {self.target_url}")
             return
-        
+
         soup = BeautifulSoup(response.text, 'html.parser')
         forms = soup.find_all('form')
-        print(f"Found {len(forms)} forms on {self.target_url}", flush=True)
-        
+        logger.info(f"Found {len(forms)} forms on {self.target_url}")
+
         for form in forms:
             action = form.get('action', '')
             method = form.get('method', 'get').lower()
             form_url = urljoin(self.target_url, action) if action else self.target_url
-            
+
             inputs = form.find_all(['input', 'textarea'])
             form_data = {}
             for inp in inputs:
                 name = inp.get('name')
                 if name:
                     form_data[name] = inp.get('value', 'test')
-            
-            print(f"Form: {form_url}, method: {method}, fields: {list(form_data.keys())}", flush=True)
-            
+
+            logger.info(f"Form: {form_url}, method: {method}, fields: {list(form_data.keys())}")
             if not form_data:
                 continue
-            
-            if method == 'post':
-                normal_resp = self.make_request(form_url, method='POST', data=form_data)
-            else:
-                normal_resp = self.make_request(form_url, method='GET', params=form_data)
-            normal_length = len(normal_resp.text) if normal_resp else 0
-            print(f"Normal response length: {normal_length}", flush=True)
-            
+
             for field in form_data:
-                for payload in self.PAYLOADS:
-                    test_data = form_data.copy()
-                    test_data[field] = payload
-                    
-                    start_time = time.time()
-                    if method == 'post':
-                        resp = self.make_request(form_url, method='POST', data=test_data)
-                    else:
-                        resp = self.make_request(form_url, method='GET', params=test_data)
-                    elapsed = time.time() - start_time
-                    
-                    length_diff = abs(len(resp.text) - normal_length) if resp else 0
-                    print(f"Field: {field}, payload: {payload[:20]}, elapsed: {round(elapsed,2)}s, length_diff: {length_diff}", flush=True)
-                    
-                    if resp and (self._detect_sql_error(resp.text) or elapsed > self.threshold or length_diff > 500):
-                        print(f"SQL INJECTION FOUND in {field}! elapsed={elapsed}, length_diff={length_diff}", flush=True)
-                        detection = 'Time-based' if elapsed > self.threshold else 'Boolean-based' if length_diff > 500 else 'Error-based'
-                        self.add_vulnerability({
-                            "vuln_type": "sql_injection",
-                            "severity": "critical",
-                            "title": self.t(
-                                f"SQL Injection vulnerability in form field '{field}'",
-                                f"SQL Injection խոցելիություն form-ի {field} դաշտում"
-                            ),
-                            "description": self.t(
-                                f"SQL injection detected in form field '{field}' ({method.upper()}). {detection}.",
-                                f"SQL injection հայտնաբերված form-ի '{field}' դաշտում ({method.upper()})։ {detection}։"
-                            ),
-                            "url": form_url,
-                            "parameter": field,
-                            "method": method.upper(),
-                            "payload": payload,
-                            "evidence": f"Response length diff: {length_diff} bytes (normal: {normal_length}, payload: {len(resp.text) if resp else 0})",
-                            "recommendation": self.t(
-                                "Use parameterized queries or prepared statements.",
-                                "Օգտագործեք parameterized queries կամ prepared statements։",
-                            "Используйте параметризованные запросы или подготовленные выражения."
-                            ),
-                            "references": "https://owasp.org/www-community/attacks/SQL_Injection"
-                        })
+                if field in self._reported_params:
+                    logger.info(f"Skipping form field '{field}' — already reported")
+                    continue
+
+                # Error-based check
+                for payload in self.ERROR_PAYLOADS:
+                    test_data = {**form_data, field: payload}
+                    resp = self.make_request(
+                        form_url,
+                        method='POST' if method == 'post' else 'GET',
+                        **({'data': test_data} if method == 'post' else {'params': test_data})
+                    )
+                    if resp and self._detect_sql_error(resp.text):
+                        logger.info(f"Error-based SQL Injection in form field '{field}'")
+                        self._reported_params.add(field)
+                        self._report(
+                            param=field, method=method.upper(), payload=payload, url=form_url,
+                            detection="Error-based", evidence="SQL error signature found in response",
+                            title_key="form"
+                        )
                         break
+
+                if field in self._reported_params:
+                    continue
+
+                # Time-based check (only SLEEP/WAITFOR payloads)
+                for payload in self.TIME_PAYLOADS:
+                    test_data = {**form_data, field: payload}
+                    start = time.time()
+                    resp = self.make_request(
+                        form_url,
+                        method='POST' if method == 'post' else 'GET',
+                        **({'data': test_data} if method == 'post' else {'params': test_data})
+                    )
+                    elapsed = time.time() - start
+                    if resp and elapsed > self.time_threshold:
+                        logger.info(f"Time-based SQL Injection in form field '{field}' elapsed={elapsed:.2f}s")
+                        self._reported_params.add(field)
+                        self._report(
+                            param=field, method=method.upper(), payload=payload, url=form_url,
+                            detection="Time-based",
+                            evidence=f"Response time: {round(elapsed, 2)}s (baseline: {round(self.baseline_time, 2)}s)",
+                            title_key="form"
+                        )
+                        break
+
+    def _report(self, param, method, payload, url, detection, evidence, title_key="param"):
+        if title_key == "form":
+            title_en = f"SQL Injection vulnerability in form field '{param}'"
+            title_hy = f"SQL Injection խոցելիություն form-ի '{param}' դաշտում"
+            desc_en = f"SQL injection detected in form field '{param}' ({method}). {detection}."
+            desc_hy = f"SQL injection հայտնաբերված form-ի '{param}' դաշտում ({method})։ {detection}։"
+        else:
+            title_en = f"SQL Injection vulnerability in parameter '{param}'"
+            title_hy = f"SQL Injection խոցելիություն '{param}' պարամետրում"
+            desc_en = f"SQL injection detected in '{param}' parameter ({method}). {detection}."
+            desc_hy = f"SQL injection հայտնաբերված '{param}' պարամետրում ({method})։ {detection}։"
+
+        self.add_vulnerability({
+            "vuln_type": "sql_injection",
+            "severity": "critical",
+            "title": self.t(title_en, title_hy),
+            "description": self.t(desc_en, desc_hy),
+            "url": url,
+            "parameter": param,
+            "method": method,
+            "payload": payload,
+            "evidence": evidence,
+            "recommendation": self.t(
+                "Use parameterized queries or prepared statements. Never concatenate user input into SQL queries.",
+                "Օգտագործեք parameterized queries կամ prepared statements։ Երբեք մի միացրեք օգտատիրոջ input-ը SQL հարցումներին։",
+                "Используйте параметризованные запросы или подготовленные выражения. Никогда не конкатенируйте пользовательский ввод в SQL-запросы."
+            ),
+            "references": "https://owasp.org/www-community/attacks/SQL_Injection"
+        })
 
     def _detect_sql_error(self, response_text: str) -> bool:
         response_lower = response_text.lower()
         for signature in self.ERROR_SIGNATURES:
-            if signature in response_lower:
+            if signature in response_lower and signature not in self._baseline_text:
                 return True
         return False

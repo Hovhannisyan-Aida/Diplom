@@ -43,7 +43,6 @@ class BaseScanner:
 
     def add_vulnerability(self, vuln: Dict[str, Any]):
         self.results.append(vuln)
-        self.vulnerabilities.append(vuln)
 
     def get_results(self) -> List[Dict[str, Any]]:
         return self.results

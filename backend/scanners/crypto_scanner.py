@@ -14,7 +14,6 @@ class CryptoScanner(BaseScanner):
 
     def scan(self) -> List[Dict[str, Any]]:
         logger.info(f"Starting Crypto scan for {self.target_url}")
-        print(f"Starting Crypto scan for {self.target_url}", flush=True)
 
         parsed_url = urlparse(self.target_url)
         hostname = parsed_url.hostname
@@ -45,7 +44,7 @@ class CryptoScanner(BaseScanner):
             if response:
                 location = response.headers.get("location", "")
                 if response.status_code in (301, 302) and location.startswith("https://"):
-                    print(f"HTTP redirects to HTTPS at {location}", flush=True)
+                    logger.info(f"HTTP redirects to HTTPS at {location}")
                 else:
                     self.add_vulnerability({
                         "vuln_type": "cryptographic_failure",
@@ -76,7 +75,7 @@ class CryptoScanner(BaseScanner):
                         cipher = ssock.cipher()
                         version = ssock.version()
 
-                        print(f"TLS version: {version}, cipher: {cipher}", flush=True)
+                        logger.info(f"TLS version: {version}, cipher: {cipher}")
 
                         if version in ['TLSv1', 'TLSv1.1', 'SSLv2', 'SSLv3']:
                             self.add_vulnerability({
@@ -127,7 +126,7 @@ class CryptoScanner(BaseScanner):
                                 try:
                                     expire_date = datetime.strptime(expire_str.rsplit(' ', 1)[0], "%b %d %H:%M:%S %Y").replace(tzinfo=timezone.utc)
                                     days_left = (expire_date - datetime.now(timezone.utc)).days
-                                    print(f"Certificate expires in {days_left} days", flush=True)
+                                    logger.info(f"Certificate expires in {days_left} days")
                                     if days_left < 0:
                                         self.add_vulnerability({
                                             "vuln_type": "cryptographic_failure",
@@ -282,13 +281,13 @@ class CryptoScanner(BaseScanner):
                         ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                     })
-                    print(f"HSTS header missing on {self.target_url}", flush=True)
+                    logger.info(f"HSTS header missing on {self.target_url}")
                 else:
-                    print(f"HSTS header present: {hsts}", flush=True)
+                    logger.info(f"HSTS header present: {hsts}")
 
         self._check_weak_hashing(response=https_response)
 
-        print(f"Crypto scan finished, found {len(self.results)} vulnerabilities", flush=True)
+        logger.info(f"Crypto scan finished, found {len(self.results)} vulnerabilities")
         return self.get_results()
 
     def _check_weak_hashing(self, response=None):
@@ -310,37 +309,29 @@ class CryptoScanner(BaseScanner):
                 if is_md5 or is_sha1:
                     algo = "MD5" if is_md5 else "SHA1"
                     known = known_hashes.get(val.strip().lower())
-                    if known:
-                        desc_en = (
-                            f"URL parameter '{param}' contains an unsalted {algo} hash of the value '{known[1]}' ({val}). "
-                            f"{algo} produces the same hash for the same input with no salt, making it vulnerable to rainbow table attacks."
-                        )
-                        desc_hy = (
-                            f"URL parametr '{param}'-y parunakum e '{known[1]}' ({val}) arjeqi unsalted {algo} hash։ "
-                            f"{algo}-n nuyn input-i hamar misht talis e nuyn hash-y aranc salt-i, inchн ayn khoceli e rainbow table hardzakumneri nkatmamb։"
-                        )
-                    else:
-                        desc_en = (
-                            f"URL parameter '{param}' contains a value matching a {algo} hash pattern ({val}). "
-                            f"{algo} produces the same hash for the same input with no salt, making it vulnerable to rainbow table attacks."
-                        )
-                        desc_hy = (
-                            f"URL parametr '{param}'-y parunakum e {algo} hash-i dzevachafin hamapataskhanog arjeq ({val})։ "
-                            f"{algo}-n nuyn input-i hamar misht talis e nuyn hash-y, inchн ayn khoceli e rainbow table hardzakumneri nkatmamb։"
-                        )
-                    print(f"Hash in URL param '{param}': {val} ({algo})", flush=True)
+                    if not known:
+                        continue
+                    desc_en = (
+                        f"URL parameter '{param}' contains an unsalted {algo} hash of the value '{known[1]}' ({val}). "
+                        f"{algo} produces the same hash for the same input with no salt, making it vulnerable to rainbow table attacks."
+                    )
+                    desc_hy = (
+                        f"URL parametr '{param}'-ը պարունակում է '{known[1]}' ({val}) արժեքի unsalted {algo} hash։ "
+                        f"{algo}-ն նույն input-ի համար միշտ տալիս է նույն hash-ը առանց salt-ի, ինչն այն խոցելի է rainbow table հարձակումների նկատմամբ։"
+                    )
+                    logger.info(f"Known hash in URL param '{param}': {val} ({algo})")
                     self.add_vulnerability({
                         "vuln_type": "cryptographic_failure",
-                        "severity": "critical" if known else "high",
+                        "severity": "critical",
                         "title": self.t(
                             f"Weak Unsalted {algo} Hash in URL Parameter '{param}'",
-                            f"Thuyl Unsalted {algo} Hash URL Parametrum '{param}'"
+                            f"Թույլ Unsalted {algo} Hash URL Պարամետրում '{param}'"
                         ),
                         "description": self.t(desc_en, desc_hy),
                         "url": self.target_url,
                         "recommendation": self.t(
                             f"Never use {algo} for passwords. Use bcrypt, Argon2, or PBKDF2 with a unique salt.",
-                            f"Bervek mi ogtagordzek {algo}-n gaghtnabarneri hamar։ Ogtagordzek bcrypt, Argon2 kam PBKDF2 ezaki salt-ov։"
+                            f"Երբեք մի օգտագործեք {algo}-ն գաղտնաբառերի համար։ Օգտագործեք bcrypt, Argon2 կամ PBKDF2 եզակի salt-ով։"
                         ),
                         "references": "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
                     })
@@ -359,7 +350,7 @@ class CryptoScanner(BaseScanner):
         for h in found_md5 + found_sha1:
             if h.lower() in known_hashes:
                 algo, original = known_hashes[h.lower()]
-                print(f"Unsalted {algo} hash found in response: {h} = '{original}'", flush=True)
+                logger.info(f"Unsalted {algo} hash found in response: {h} = '{original}'")
                 self.add_vulnerability({
                     "vuln_type": "cryptographic_failure",
                     "severity": "critical",
@@ -387,7 +378,7 @@ class CryptoScanner(BaseScanner):
             for h in md5_pattern.findall(cookie_value) + sha1_pattern.findall(cookie_value):
                 if h.lower() in known_hashes:
                     algo, original = known_hashes[h.lower()]
-                    print(f"Unsalted {algo} hash in cookie '{cookie_name}': {h}", flush=True)
+                    logger.info(f"Unsalted {algo} hash in cookie '{cookie_name}': {h}")
                     self.add_vulnerability({
                         "vuln_type": "cryptographic_failure",
                         "severity": "critical",
@@ -410,6 +401,6 @@ class CryptoScanner(BaseScanner):
                     })
 
         if found_md5:
-            print(f"Found {len(found_md5)} potential MD5 hashes in response body (no known match)", flush=True)
+            logger.info(f"Found {len(found_md5)} potential MD5 hashes in response body (no known match)")
         if found_sha1:
-            print(f"Found {len(found_sha1)} potential SHA1 hashes in response body (no known match)", flush=True)
+            logger.info(f"Found {len(found_sha1)} potential SHA1 hashes in response body (no known match)")

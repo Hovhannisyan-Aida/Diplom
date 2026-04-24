@@ -23,10 +23,16 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255,255,255,0.08);
   font-size: 14px;
   font-weight: 500;
-  white-space: nowrap;
   max-width: 90vw;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.scan-banner-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .scan-banner-spinner {
@@ -46,6 +52,7 @@
 .scan-banner-text {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .scan-banner-link {

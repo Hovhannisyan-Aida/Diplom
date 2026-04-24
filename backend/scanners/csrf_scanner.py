@@ -31,13 +31,13 @@ class CSRFScanner(BaseScanner):
         response = self.make_request(self.target_url)
         if response is None:
             logger.warning(f"No response from {self.target_url}")
-            return self.vulnerabilities
+            return self.get_results()
 
         try:
             soup = BeautifulSoup(response.text, 'html.parser')
         except Exception as e:
             logger.error(f"Failed to parse HTML: {e}")
-            return self.vulnerabilities
+            return self.get_results()
 
         self._check_cookies(response)
         self._check_csrf_headers(response)
@@ -66,8 +66,8 @@ class CSRFScanner(BaseScanner):
 
             self._check_forms(page_soup, page_url)
 
-        logger.info(f"CSRF scan finished, found {len(self.vulnerabilities)} vulnerabilities")
-        return self.vulnerabilities
+        logger.info(f"CSRF scan finished, found {len(self.results)} vulnerabilities")
+        return self.get_results()
 
     def _collect_links(self, soup, max_pages: int = 10):
         base_domain = urlparse(self.target_url).netloc

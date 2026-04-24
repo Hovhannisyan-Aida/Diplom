@@ -28,7 +28,7 @@ function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || t('toast.loginFailed'));
+      setError(err.response?.data?.detail || err.message || t('toast.loginFailed'));
     } finally {
       setLoading(false);
     }

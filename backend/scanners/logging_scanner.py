@@ -54,7 +54,6 @@ class LoggingMonitoringScanner(BaseScanner):
 
     def scan(self) -> List[Dict[str, Any]]:
         logger.info(f"Starting Logging & Monitoring scan for {self.target_url}")
-        print(f"Starting Logging & Monitoring scan for {self.target_url}", flush=True)
 
         response = self.make_request(self.target_url)
         if response:
@@ -64,7 +63,7 @@ class LoggingMonitoringScanner(BaseScanner):
 
         self._check_sensitive_endpoints()
 
-        print(f"Logging & Monitoring scan finished, found {len(self.results)} vulnerabilities", flush=True)
+        logger.info(f"Logging & Monitoring scan finished, found {len(self.results)} vulnerabilities")
         return self.get_results()
 
     def _check_version_disclosure(self, response):
@@ -165,7 +164,7 @@ class LoggingMonitoringScanner(BaseScanner):
 
         if meta_match:
             generator = meta_match.group(1).strip()
-            print(f"Generator meta tag found: {generator}", flush=True)
+            logger.info(f"Generator meta tag found: {generator}")
             self.add_vulnerability({
                 'vuln_type': 'logging_monitoring',
                 'severity': 'low',
@@ -203,7 +202,7 @@ class LoggingMonitoringScanner(BaseScanner):
         for signature, tech in tech_signatures.items():
             if signature in body_lower:
                 if not any(v.get('evidence', '').startswith('<meta') for v in self.results):
-                    print(f"Technology signature found: {tech} ({signature})", flush=True)
+                    logger.info(f"Technology signature found: {tech} ({signature})")
                     self.add_vulnerability({
                         'vuln_type': 'logging_monitoring',
                         'severity': 'low',
@@ -241,7 +240,7 @@ class LoggingMonitoringScanner(BaseScanner):
             body_lower = response.text.lower()
             for pattern in self.STACK_TRACE_PATTERNS:
                 if re.search(pattern, body_lower, re.IGNORECASE):
-                    print(f"Verbose error page detected at {url}", flush=True)
+                    logger.info(f"Verbose error page detected at {url}")
                     self.add_vulnerability({
                         'vuln_type': 'logging_monitoring',
                         'severity': 'high',
@@ -291,7 +290,7 @@ class LoggingMonitoringScanner(BaseScanner):
             if not is_open and not is_protected:
                 continue
 
-            print(f"Sensitive endpoint found: {url} (HTTP {status})", flush=True)
+            logger.info(f"Sensitive endpoint found: {url} (HTTP {status})")
 
             if is_open:
                 severity = self._severity_for_path(path)

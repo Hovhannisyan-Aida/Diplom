@@ -140,7 +140,7 @@ def run_vulnerability_scan(scan_id: int):
         scan.completed_at = datetime.now(timezone.utc)
         if scan.started_at:
             started = scan.started_at if scan.started_at.tzinfo else scan.started_at.replace(tzinfo=timezone.utc)
-            scan.scan_duration = int((scan.completed_at - started).total_seconds())
+            scan.scan_duration = round((scan.completed_at - started).total_seconds(), 2)
         else:
             scan.scan_duration = None
         scan.total_vulnerabilities = len(all_vulnerabilities)

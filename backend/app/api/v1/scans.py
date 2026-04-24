@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.db.session import get_db
 from app.schemas.scan import ScanCreate, ScanInDB
 from app.schemas.user import UserInDB
@@ -14,9 +16,12 @@ from app.models.vulnerability import Vulnerability
 from app.core.validators import validate_no_ssrf
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 @router.post("/", response_model=ScanInDB, status_code=status.HTTP_201_CREATED)
-def create_scan(scan: ScanCreate,
+@limiter.limit("3/minute")
+def create_scan(request: Request,
+                scan: ScanCreate,
                 db: Session = Depends(get_db),
                 current_user: UserInDB = Depends(get_current_user)):
     validate_no_ssrf(scan.target_url)
@@ -29,6 +34,58 @@ def get_user_scans(db: Session = Depends(get_db),
                    current_user: UserInDB = Depends(get_current_user)):
     scans = crud_scan.get_user_scans(db, user_id=current_user.id)
     return scans
+
+@router.get("/statistics/summary")
+def get_user_statistics(db: Session = Depends(get_db),
+                        current_user: UserInDB = Depends(get_current_user)):
+    scans = crud_scan.get_user_scans(db, user_id=current_user.id)
+
+    total_scans = len(scans)
+    completed_scans = len([s for s in scans if s.status == ScanStatus.completed])
+    failed_scans = len([s for s in scans if s.status == ScanStatus.failed])
+    in_progress_scans = len([s for s in scans if s.status == ScanStatus.in_progress])
+
+    total_vulnerabilities = sum(s.total_vulnerabilities for s in scans)
+    total_critical = sum(s.critical_count for s in scans)
+    total_high = sum(s.high_count for s in scans)
+    total_medium = sum(s.medium_count for s in scans)
+    total_low = sum(s.low_count for s in scans)
+
+    completed_with_duration = [s for s in scans if s.status == ScanStatus.completed and s.scan_duration]
+    avg_duration = None
+    if completed_with_duration:
+        avg_duration = sum(s.scan_duration for s in completed_with_duration) / len(completed_with_duration)
+
+    recent_scans = sorted(scans, key=lambda s: s.created_at, reverse=True)[:5]
+
+    return {
+        "total_scans": total_scans,
+        "completed_scans": completed_scans,
+        "failed_scans": failed_scans,
+        "in_progress_scans": in_progress_scans,
+        "total_vulnerabilities": total_vulnerabilities,
+        "vulnerabilities_by_severity": {
+            "critical": total_critical,
+            "high": total_high,
+            "medium": total_medium,
+            "low": total_low
+        },
+        "average_scan_duration": round(avg_duration, 2) if avg_duration else None,
+        "recent_scans": [
+            {
+                "id": s.id,
+                "target_url": s.target_url,
+                "status": s.status.value,
+                "created_at": s.created_at.isoformat(),
+                "total_vulnerabilities": s.total_vulnerabilities,
+                "critical_count": s.critical_count,
+                "high_count": s.high_count,
+                "medium_count": s.medium_count,
+                "low_count": s.low_count,
+            }
+            for s in recent_scans
+        ]
+    }
 
 @router.get("/{scan_id}", response_model=ScanInDB)
 def get_scan(scan_id: int,
@@ -126,69 +183,3 @@ def delete_scan(scan_id: int,
     if scan.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     crud_scan.delete_scan(db, scan_id)
-
-@router.get("/statistics/summary")
-def get_user_statistics(db: Session = Depends(get_db),
-                        current_user: UserInDB = Depends(get_current_user)):
-    scans = crud_scan.get_user_scans(db, user_id=current_user.id)
-
-    total_scans = len(scans)
-    completed_scans = len([s for s in scans if s.status == ScanStatus.completed])
-    failed_scans = len([s for s in scans if s.status == ScanStatus.failed])
-    in_progress_scans = len([s for s in scans if s.status == ScanStatus.in_progress])
-
-    total_vulnerabilities = sum(s.total_vulnerabilities for s in scans)
-    total_critical = sum(s.critical_count for s in scans)
-    total_high = sum(s.high_count for s in scans)
-    total_medium = sum(s.medium_count for s in scans)
-    total_low = sum(s.low_count for s in scans)
-
-    completed_with_duration = [s for s in scans if s.status == ScanStatus.completed and s.scan_duration]
-    avg_duration = None
-    if completed_with_duration:
-        avg_duration = sum(s.scan_duration for s in completed_with_duration) / len(completed_with_duration)
-
-    SEVERITY_PRIORITY = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-
-    def scan_priority(s):
-        if s.critical_count > 0:
-            return (0, -s.critical_count)
-        if s.high_count > 0:
-            return (1, -s.high_count)
-        if s.medium_count > 0:
-            return (2, -s.medium_count)
-        if s.low_count > 0:
-            return (3, -s.low_count)
-        return (4, 0)
-
-    completed = [s for s in scans if s.status == ScanStatus.completed]
-    recent_scans = sorted(completed, key=scan_priority)[:5]
-
-    return {
-        "total_scans": total_scans,
-        "completed_scans": completed_scans,
-        "failed_scans": failed_scans,
-        "in_progress_scans": in_progress_scans,
-        "total_vulnerabilities": total_vulnerabilities,
-        "vulnerabilities_by_severity": {
-            "critical": total_critical,
-            "high": total_high,
-            "medium": total_medium,
-            "low": total_low
-        },
-        "average_scan_duration": round(avg_duration, 2) if avg_duration else None,
-        "recent_scans": [
-            {
-                "id": s.id,
-                "target_url": s.target_url,
-                "status": s.status.value,
-                "created_at": s.created_at.isoformat(),
-                "total_vulnerabilities": s.total_vulnerabilities,
-                "critical_count": s.critical_count,
-                "high_count": s.high_count,
-                "medium_count": s.medium_count,
-                "low_count": s.low_count,
-            }
-            for s in recent_scans
-        ]
-    }

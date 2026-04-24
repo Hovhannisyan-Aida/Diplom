@@ -31,13 +31,23 @@ def create_user(db: Session, user: UserCreate) -> User:
     db.refresh(db_user)
     return db_user
 
+_DUMMY_HASH = "$2b$12$eImiTXuWVxfM37uY4JANjQ.OdU0WaDQNHHJVTkE3tBqRlUJeXyJSC"
+
 def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     user = get_user_by_email(db, email)
     if not user:
+        verify_password(password, _DUMMY_HASH)
         return None
     if not verify_password(password, user.hashed_password):
         return None
     return user
+
+def reset_verification_token(db: Session, user: User) -> str:
+    token = secrets.token_urlsafe(32)
+    user.verification_token = token
+    user.verification_token_expires = datetime.now(timezone.utc) + timedelta(hours=24)
+    db.commit()
+    return token
 
 def delete_user(db: Session, user_id: int) -> None:
     user = db.query(User).filter(User.id == user_id).first()

@@ -8,7 +8,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 from app.core.config import settings
-from app.api.v1 import auth, scans, users, test
+from app.api.v1 import auth, scans, users
 from app.db.session import engine
 from app.db.base import Base
 
@@ -21,6 +21,7 @@ with engine.connect() as _conn:
     _conn.execute(text("ALTER TABLE scans ALTER COLUMN started_at TYPE TIMESTAMPTZ USING started_at AT TIME ZONE 'UTC'"))
     _conn.execute(text("ALTER TABLE scans ALTER COLUMN completed_at TYPE TIMESTAMPTZ USING completed_at AT TIME ZONE 'UTC'"))
     _conn.execute(text("ALTER TABLE scans ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'UTC'"))
+    _conn.execute(text("ALTER TABLE scans ALTER COLUMN scan_duration TYPE DOUBLE PRECISION USING scan_duration::double precision"))
     _conn.commit()
 
 limiter = Limiter(key_func=get_remote_address)
@@ -51,7 +52,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
+            "script-src 'self'; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data:; "
             "connect-src 'self' http://localhost:3000 http://localhost:8000; "
@@ -64,7 +65,6 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["Authentication"])
 app.include_router(users.router, prefix=f"{settings.API_V1_PREFIX}/users", tags=["Users"])
 app.include_router(scans.router, prefix=f"{settings.API_V1_PREFIX}/scans", tags=["Scans"])
-app.include_router(test.router, prefix=f"{settings.API_V1_PREFIX}/test", tags=["Test"])
 
 @app.get("/")
 def root():

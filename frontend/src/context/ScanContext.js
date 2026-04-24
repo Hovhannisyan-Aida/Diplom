@@ -11,8 +11,14 @@ const STORAGE_KEY = 'activeScans';
 
 function loadFromStorage() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    if (!Array.isArray(data) || !data.every(s => s && typeof s.id === 'number' && typeof s.target_url === 'string')) {
+      localStorage.removeItem(STORAGE_KEY);
+      return [];
+    }
+    return data;
   } catch {
+    localStorage.removeItem(STORAGE_KEY);
     return [];
   }
 }
@@ -49,7 +55,12 @@ export const ScanProvider = ({ children }) => {
         try {
           const res = await scansAPI.getById(scan.id);
           return { ...scan, status: res.data.status, total_vulnerabilities: res.data.total_vulnerabilities };
-        } catch {
+        } catch (err) {
+          // Server responded (4xx/5xx): scan is gone or broken — treat as failed so it clears
+          if (err.response) {
+            return { ...scan, status: 'failed' };
+          }
+          // Pure network error: keep polling
           return scan;
         }
       })

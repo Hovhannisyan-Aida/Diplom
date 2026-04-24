@@ -24,7 +24,7 @@ class ScanInDB(ScanBase):
     high_count: int
     medium_count: int
     low_count: int
-    scan_duration: Optional[int] = None
+    scan_duration: Optional[float] = None
     error_message: Optional[str] = None
     custom_options: Optional[dict] = None
     vulnerabilities: List[VulnerabilityInDB] = []

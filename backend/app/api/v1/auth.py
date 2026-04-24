@@ -1,7 +1,11 @@
 import os
+import logging
 import threading
 from datetime import datetime, timedelta, timezone
+from pydantic import BaseModel
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+
+logger = logging.getLogger(__name__)
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -19,14 +23,31 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
 limiter = Limiter(key_func=get_remote_address)
 
-_redis = redis_lib.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"), decode_responses=True)
+try:
+    _redis = redis_lib.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"), decode_responses=True)
+    _redis.ping()
+except Exception:
+    _redis = None
 
 def _blacklist_token(token: str, expires_delta_seconds: int = None):
+    if _redis is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Token blacklist unavailable — Redis is not connected"
+        )
     ttl = expires_delta_seconds or (settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
     _redis.setex(f"bl:{token}", ttl, "1")
 
 def _is_blacklisted(token: str) -> bool:
-    return _redis.exists(f"bl:{token}") == 1
+    if _redis is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Token validation unavailable — Redis is not connected"
+        )
+    try:
+        return _redis.exists(f"bl:{token}") == 1
+    except Exception:
+        return False
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -62,6 +83,7 @@ def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
     new_user = crud_user.create_user(db=db, user=user)
+    logger.info(f"New user registered: {new_user.email}")
     thread = threading.Thread(
         target=send_verification_email,
         args=(new_user.email, new_user.verification_token),
@@ -75,6 +97,7 @@ def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
 def login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = crud_user.authenticate_user(db, email=form_data.username, password=form_data.password)
     if not user:
+        logger.warning(f"Failed login attempt for email: {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -96,15 +119,17 @@ def login(request: Request, response: Response, form_data: OAuth2PasswordRequest
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=settings.COOKIE_SECURE,
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
         path="/api/v1/auth/refresh",
     )
+    logger.info(f"User logged in: {user.email}")
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/refresh", response_model=Token)
-def refresh(response: Response, refresh_token: str = Cookie(default=None), db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def refresh(request: Request, response: Response, refresh_token: str = Cookie(default=None), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired refresh token",
@@ -132,17 +157,20 @@ def refresh(response: Response, refresh_token: str = Cookie(default=None), db: S
         key="refresh_token",
         value=new_refresh_token,
         httponly=True,
-        secure=True,
+        secure=settings.COOKIE_SECURE,
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
         path="/api/v1/auth/refresh",
     )
+    logger.info(f"Token refreshed for user: {user.email}")
     return {"access_token": new_access_token, "token_type": "bearer"}
 
 @router.post("/logout")
-def logout(response: Response, token: str = Depends(oauth2_scheme)):
+@limiter.limit("10/minute")
+def logout(request: Request, response: Response, token: str = Depends(oauth2_scheme)):
     _blacklist_token(token)
     response.delete_cookie(key="refresh_token", path="/api/v1/auth/refresh")
+    logger.info("User logged out")
     return {"message": "Successfully logged out"}
 
 @router.get("/verify-email")
@@ -151,6 +179,8 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     if not user:
         return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?verify_error=invalid")
     expires = user.verification_token_expires
+    if not expires:
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?verify_error=invalid")
     if expires.tzinfo is None:
         expires = expires.replace(tzinfo=timezone.utc)
     if expires < datetime.now(timezone.utc):
@@ -160,6 +190,24 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     user.verification_token_expires = None
     db.commit()
     return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?verified=true")
+
+class ResendVerificationRequest(BaseModel):
+    email: str
+
+@router.post("/resend-verification")
+@limiter.limit("2/minute")
+def resend_verification(request: Request, body: ResendVerificationRequest, db: Session = Depends(get_db)):
+    user = crud_user.get_user_by_email(db, email=body.email)
+    if not user or user.is_verified:
+        return {"message": "If that email exists and is unverified, a new link has been sent."}
+    new_token = crud_user.reset_verification_token(db, user)
+    thread = threading.Thread(
+        target=send_verification_email,
+        args=(user.email, new_token),
+        daemon=True,
+    )
+    thread.start()
+    return {"message": "If that email exists and is unverified, a new link has been sent."}
 
 @router.get("/me", response_model=UserInDB)
 def read_users_me(current_user: UserInDB = Depends(get_current_user)):
