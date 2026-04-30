@@ -25,6 +25,16 @@ class SQLInjectionScanner(BaseScanner):
         "'; WAITFOR DELAY '0:0:4'--",
     ]
 
+    TRUE_PAYLOADS = [
+        "' OR '1'='1",
+        "' OR 1=1--",
+    ]
+
+    FALSE_PAYLOADS = [
+        "' AND '1'='2",
+        "' AND 1=2--",
+    ]
+
     ERROR_SIGNATURES = [
         "sql syntax",
         "mysql_fetch",
@@ -56,6 +66,7 @@ class SQLInjectionScanner(BaseScanner):
         self.time_threshold = self.baseline_time + 3.5
         self._reported_params = set()
         self._baseline_text = baseline_response.text.lower() if baseline_response else ""
+        self._baseline_len = len(baseline_response.text) if baseline_response else 0
         logger.info(f"Baseline: {round(self.baseline_time, 2)}s, Time threshold: {round(self.time_threshold, 2)}s")
 
         self._test_url_parameters()
@@ -70,6 +81,8 @@ class SQLInjectionScanner(BaseScanner):
         if params:
             for param in params:
                 self._test_param_error_based(param, params, parsed)
+                if param not in self._reported_params:
+                    self._test_param_boolean_based(param, params, parsed)
                 if param not in self._reported_params:
                     self._test_param_time_based(param, params, parsed)
         else:
@@ -92,6 +105,36 @@ class SQLInjectionScanner(BaseScanner):
                 )
                 return
 
+    def _test_param_boolean_based(self, param, params, parsed):
+        for true_payload, false_payload in zip(self.TRUE_PAYLOADS, self.FALSE_PAYLOADS):
+            new_params_true = params.copy()
+            new_params_true[param] = [true_payload]
+            true_url = urlunparse(parsed._replace(query=urlencode(new_params_true, doseq=True)))
+
+            new_params_false = params.copy()
+            new_params_false[param] = [false_payload]
+            false_url = urlunparse(parsed._replace(query=urlencode(new_params_false, doseq=True)))
+
+            true_resp = self.make_request(true_url)
+            false_resp = self.make_request(false_url)
+
+            if not true_resp or not false_resp:
+                continue
+
+            direct_diff = abs(len(true_resp.text) - len(false_resp.text))
+            true_vs_baseline = abs(len(true_resp.text) - self._baseline_len)
+
+            if direct_diff > 500 and true_vs_baseline < 300:
+                logger.info(f"Boolean-based SQL Injection in URL param '{param}' direct_diff={direct_diff} true_vs_baseline={true_vs_baseline}")
+                self._reported_params.add(param)
+                self._report(
+                    param=param, method="GET",
+                    payload=f"{true_payload} / {false_payload}",
+                    url=true_url, detection="Boolean-based",
+                    evidence=f"TRUE/FALSE response size difference: {direct_diff}B (true_vs_baseline: {true_vs_baseline}B)"
+                )
+                return
+
     def _test_param_time_based(self, param, params, parsed):
         for payload in self.TIME_PAYLOADS:
             new_params = params.copy()
@@ -101,16 +144,21 @@ class SQLInjectionScanner(BaseScanner):
             response = self.make_request(test_url)
             elapsed = time.time() - start
             if response and elapsed > self.time_threshold:
-                logger.info(f"Time-based SQL Injection in URL param '{param}' elapsed={elapsed:.2f}s")
-                self._reported_params.add(param)
-                self._report(
-                    param=param, method="GET", payload=payload, url=test_url,
-                    detection="Time-based",
-                    evidence=f"Response time: {round(elapsed, 2)}s (baseline: {round(self.baseline_time, 2)}s)"
-                )
-                return
+                start2 = time.time()
+                self.make_request(test_url)
+                elapsed2 = time.time() - start2
+                if elapsed2 > self.time_threshold:
+                    logger.info(f"Time-based SQL Injection in URL param '{param}' elapsed={elapsed:.2f}s confirmed={elapsed2:.2f}s")
+                    self._reported_params.add(param)
+                    self._report(
+                        param=param, method="GET", payload=payload, url=test_url,
+                        detection="Time-based",
+                        evidence=f"Response time: {round(elapsed, 2)}s, confirmed: {round(elapsed2, 2)}s (baseline: {round(self.baseline_time, 2)}s)"
+                    )
+                    return
 
     def _test_common_param(self, param):
+        # Error-based
         for payload in self.ERROR_PAYLOADS:
             test_url = f"{self.target_url}?{param}={payload}"
             response = self.make_request(test_url)
@@ -123,20 +171,48 @@ class SQLInjectionScanner(BaseScanner):
                 )
                 return
 
-        for payload in self.TIME_PAYLOADS:
-            test_url = f"{self.target_url}?{param}={payload}"
-            start = time.time()
-            response = self.make_request(test_url)
-            elapsed = time.time() - start
-            if response and elapsed > self.time_threshold:
-                logger.info(f"Time-based SQL Injection in common param '{param}' elapsed={elapsed:.2f}s")
-                self._reported_params.add(param)
-                self._report(
-                    param=param, method="GET", payload=payload, url=test_url,
-                    detection="Time-based",
-                    evidence=f"Response time: {round(elapsed, 2)}s (baseline: {round(self.baseline_time, 2)}s)"
-                )
-                return
+        # Boolean-based
+        if param not in self._reported_params:
+            for true_payload, false_payload in zip(self.TRUE_PAYLOADS, self.FALSE_PAYLOADS):
+                true_url = f"{self.target_url}?{param}={true_payload}"
+                false_url = f"{self.target_url}?{param}={false_payload}"
+                true_resp = self.make_request(true_url)
+                false_resp = self.make_request(false_url)
+                if not true_resp or not false_resp:
+                    continue
+                direct_diff = abs(len(true_resp.text) - len(false_resp.text))
+                true_vs_baseline = abs(len(true_resp.text) - self._baseline_len)
+                if direct_diff > 500 and true_vs_baseline < 300:
+                    logger.info(f"Boolean-based SQL Injection in common param '{param}' direct_diff={direct_diff} true_vs_baseline={true_vs_baseline}")
+                    self._reported_params.add(param)
+                    self._report(
+                        param=param, method="GET",
+                        payload=f"{true_payload} / {false_payload}",
+                        url=true_url, detection="Boolean-based",
+                        evidence=f"TRUE/FALSE response size difference: {direct_diff}B (true_vs_baseline: {true_vs_baseline}B)"
+                    )
+                    return
+
+        # Time-based
+        if param not in self._reported_params:
+            for payload in self.TIME_PAYLOADS:
+                test_url = f"{self.target_url}?{param}={payload}"
+                start = time.time()
+                response = self.make_request(test_url)
+                elapsed = time.time() - start
+                if response and elapsed > self.time_threshold:
+                    start2 = time.time()
+                    self.make_request(test_url)
+                    elapsed2 = time.time() - start2
+                    if elapsed2 > self.time_threshold:
+                        logger.info(f"Time-based SQL Injection in common param '{param}' elapsed={elapsed:.2f}s confirmed={elapsed2:.2f}s")
+                        self._reported_params.add(param)
+                        self._report(
+                            param=param, method="GET", payload=payload, url=test_url,
+                            detection="Time-based",
+                            evidence=f"Response time: {round(elapsed, 2)}s, confirmed: {round(elapsed2, 2)}s (baseline: {round(self.baseline_time, 2)}s)"
+                        )
+                        return
 
     def _test_forms(self):
         response = self.make_request(self.target_url)
@@ -147,6 +223,8 @@ class SQLInjectionScanner(BaseScanner):
         soup = BeautifulSoup(response.text, 'html.parser')
         forms = soup.find_all('form')
         logger.info(f"Found {len(forms)} forms on {self.target_url}")
+
+        form_baselines = {}
 
         for form in forms:
             action = form.get('action', '')
@@ -164,12 +242,18 @@ class SQLInjectionScanner(BaseScanner):
             if not form_data:
                 continue
 
+            # Cache baseline length for this form's action URL
+            if form_url not in form_baselines:
+                baseline_resp = self.make_request(form_url)
+                form_baselines[form_url] = len(baseline_resp.text) if baseline_resp else 0
+            form_baseline_len = form_baselines[form_url]
+
             for field in form_data:
                 if field in self._reported_params:
                     logger.info(f"Skipping form field '{field}' — already reported")
                     continue
 
-                # Error-based check
+                # Error-based + length-diff check
                 for payload in self.ERROR_PAYLOADS:
                     test_data = {**form_data, field: payload}
                     resp = self.make_request(
@@ -177,12 +261,52 @@ class SQLInjectionScanner(BaseScanner):
                         method='POST' if method == 'post' else 'GET',
                         **({'data': test_data} if method == 'post' else {'params': test_data})
                     )
-                    if resp and self._detect_sql_error(resp.text):
-                        logger.info(f"Error-based SQL Injection in form field '{field}'")
+                    if not resp:
+                        continue
+                    len_diff = abs(len(resp.text) - form_baseline_len) if form_baseline_len > 0 else 0
+                    sql_error = self._detect_sql_error(resp.text)
+                    large_diff = len_diff > 500
+
+                    if sql_error or large_diff:
+                        detection = "Error-based" if sql_error else "Length-difference"
+                        evidence = (
+                            "SQL error signature found in response" if sql_error
+                            else f"Response length changed by {len_diff}B (baseline: {form_baseline_len}B)"
+                        )
+                        logger.info(f"{detection} SQL Injection in form field '{field}' (len_diff={len_diff})")
                         self._reported_params.add(field)
                         self._report(
                             param=field, method=method.upper(), payload=payload, url=form_url,
-                            detection="Error-based", evidence="SQL error signature found in response",
+                            detection=detection, evidence=evidence, title_key="form"
+                        )
+                        break
+
+                if field in self._reported_params:
+                    continue
+
+                # Boolean-based check
+                for true_payload, false_payload in zip(self.TRUE_PAYLOADS, self.FALSE_PAYLOADS):
+                    true_data = {**form_data, field: true_payload}
+                    false_data = {**form_data, field: false_payload}
+                    req_kwargs = {'data': true_data} if method == 'post' else {'params': true_data}
+                    true_resp = self.make_request(form_url, method='POST' if method == 'post' else 'GET', **req_kwargs)
+                    req_kwargs = {'data': false_data} if method == 'post' else {'params': false_data}
+                    false_resp = self.make_request(form_url, method='POST' if method == 'post' else 'GET', **req_kwargs)
+
+                    if not true_resp or not false_resp:
+                        continue
+
+                    direct_diff = abs(len(true_resp.text) - len(false_resp.text))
+                    true_vs_baseline = abs(len(true_resp.text) - form_baseline_len) if form_baseline_len > 0 else 0
+
+                    if direct_diff > 500 and true_vs_baseline < 300:
+                        logger.info(f"Boolean-based SQL Injection in form field '{field}' direct_diff={direct_diff} true_vs_baseline={true_vs_baseline}")
+                        self._reported_params.add(field)
+                        self._report(
+                            param=field, method=method.upper(),
+                            payload=f"{true_payload} / {false_payload}",
+                            url=form_url, detection="Boolean-based",
+                            evidence=f"TRUE/FALSE response size difference: {direct_diff}B (true_vs_baseline: {true_vs_baseline}B)",
                             title_key="form"
                         )
                         break
@@ -190,7 +314,7 @@ class SQLInjectionScanner(BaseScanner):
                 if field in self._reported_params:
                     continue
 
-                # Time-based check (only SLEEP/WAITFOR payloads)
+                # Time-based check
                 for payload in self.TIME_PAYLOADS:
                     test_data = {**form_data, field: payload}
                     start = time.time()
@@ -201,15 +325,23 @@ class SQLInjectionScanner(BaseScanner):
                     )
                     elapsed = time.time() - start
                     if resp and elapsed > self.time_threshold:
-                        logger.info(f"Time-based SQL Injection in form field '{field}' elapsed={elapsed:.2f}s")
-                        self._reported_params.add(field)
-                        self._report(
-                            param=field, method=method.upper(), payload=payload, url=form_url,
-                            detection="Time-based",
-                            evidence=f"Response time: {round(elapsed, 2)}s (baseline: {round(self.baseline_time, 2)}s)",
-                            title_key="form"
+                        start2 = time.time()
+                        self.make_request(
+                            form_url,
+                            method='POST' if method == 'post' else 'GET',
+                            **({'data': test_data} if method == 'post' else {'params': test_data})
                         )
-                        break
+                        elapsed2 = time.time() - start2
+                        if elapsed2 > self.time_threshold:
+                            logger.info(f"Time-based SQL Injection in form field '{field}' elapsed={elapsed:.2f}s confirmed={elapsed2:.2f}s")
+                            self._reported_params.add(field)
+                            self._report(
+                                param=field, method=method.upper(), payload=payload, url=form_url,
+                                detection="Time-based",
+                                evidence=f"Response time: {round(elapsed, 2)}s, confirmed: {round(elapsed2, 2)}s (baseline: {round(self.baseline_time, 2)}s)",
+                                title_key="form"
+                            )
+                            break
 
     def _report(self, param, method, payload, url, detection, evidence, title_key="param"):
         if title_key == "form":
